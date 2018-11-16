@@ -503,11 +503,11 @@ var _parseInt2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-c
 
 var _classCallCheck2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/classCallCheck */ "./node_modules/@babel/runtime-corejs2/helpers/classCallCheck.js"));
 
-var _createClass2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/createClass */ "./node_modules/@babel/runtime-corejs2/helpers/createClass.js"));
-
 var _possibleConstructorReturn2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime-corejs2/helpers/possibleConstructorReturn.js"));
 
 var _getPrototypeOf2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/getPrototypeOf */ "./node_modules/@babel/runtime-corejs2/helpers/getPrototypeOf.js"));
+
+var _createClass2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/createClass */ "./node_modules/@babel/runtime-corejs2/helpers/createClass.js"));
 
 var _inherits2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime-corejs2/helpers/inherits */ "./node_modules/@babel/runtime-corejs2/helpers/inherits.js"));
 
@@ -533,12 +533,21 @@ var ScrollView =
 /*#__PURE__*/
 function (_React$Component) {
   (0, _inherits2.default)(ScrollView, _React$Component);
+  (0, _createClass2.default)(ScrollView, null, [{
+    key: "getDerivedStateFromProps",
+    value: function getDerivedStateFromProps() {
+      return {
+        shouldComponentUpdate: true
+      };
+    }
+  }]);
 
   function ScrollView(props) {
     var _this;
 
     (0, _classCallCheck2.default)(this, ScrollView);
     _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(ScrollView).call(this, props));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "_updating", false);
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)((0, _assertThisInitialized2.default)(_this)), "handleWheel", function () {
       var defNoop = function defNoop(e) {
         e.preventDefault();
@@ -636,15 +645,15 @@ function (_React$Component) {
       hasScrollY: false,
       thumbXSize: null,
       thumbYSize: null,
-      isUpdating: false,
+      // isUpdating: false,
       scrollXRatio: null,
       scrollYRatio: null,
       scrollTop: 0,
-      scrollLeft: 0,
-      origScrollViewPaddingRight: null,
-      origScrollViewPaddingBottom: null,
-      lastScrollViewPaddingRight: null,
-      lastScrollViewPaddingBottom: null
+      scrollLeft: 0 // origScrollViewPaddingRight: null,
+      // origScrollViewPaddingBottom: null,
+      // lastScrollViewPaddingRight: null,
+      // lastScrollViewPaddingBottom: null,
+
     };
     return _this;
   }
@@ -660,23 +669,36 @@ function (_React$Component) {
     key: "componentDidMount",
     value: function componentDidMount() {
       this.updateScrollBarLayoutAndPosition();
+    } // componentWillReceiveProps() {
+    //     const state = this.state;
+    //     // state.origScrollViewPaddingRight = null;
+    //     // state.lastScrollViewPaddingRight = null;
+    //     // state.origScrollViewPaddingBottom = null;
+    //     // state.lastScrollViewPaddingBottom = null;
+    //     this.setState({
+    //         shouldComponentUpdate: true,
+    //     });
+    // }
+
+  }, {
+    key: "startUpdating",
+    value: function startUpdating() {
+      this._updating = true;
     }
   }, {
-    key: "componentWillReceiveProps",
-    value: function componentWillReceiveProps() {
-      var state = this.state;
-      state.origScrollViewPaddingRight = null;
-      state.lastScrollViewPaddingRight = null;
-      state.origScrollViewPaddingBottom = null;
-      state.lastScrollViewPaddingBottom = null;
-      this.setState({
-        shouldComponentUpdate: true
-      });
+    key: "stopUpdating",
+    value: function stopUpdating() {
+      this._updating = false;
+    }
+  }, {
+    key: "isUpdating",
+    value: function isUpdating() {
+      return this._updating;
     }
   }, {
     key: "componentDidUpdate",
     value: function componentDidUpdate() {
-      if (!this.state.isUpdating) this.updateScrollBarLayoutAndPosition();
+      if (!this.isUpdating()) this.updateScrollBarLayoutAndPosition();
     }
   }, {
     key: "saveRef",
@@ -948,13 +970,18 @@ function (_React$Component) {
       this.updateScrollBarLayoutAndPosition();
     }
   }, {
+    key: "refresh",
+    value: function refresh() {
+      this.updateScrollBarLayoutAndPosition();
+    }
+  }, {
     key: "updateScrollBarLayoutAndPosition",
     value: function updateScrollBarLayoutAndPosition() {
       var _this3 = this;
 
       var hasScrollX = this.hasScroll('x'),
           hasScrollY = this.hasScroll('y');
-      this.state.isUpdating = true;
+      this.startUpdating();
       this.setState({
         shouldComponentUpdate: false,
         hasScrollX: hasScrollX,
@@ -964,7 +991,7 @@ function (_React$Component) {
 
         _this3.updateScrollBarPosition();
 
-        _this3.state.isUpdating = false;
+        _this3.stopUpdating();
       });
     }
   }, {
@@ -980,26 +1007,25 @@ function (_React$Component) {
           verticalBarWrapEl = _this$_refs3.verticalBarWrapEl,
           horizontalBarWrapEl = _this$_refs3.horizontalBarWrapEl,
           verticalBarThumbEl = _this$_refs3.verticalBarThumbEl,
-          horizontalBarThumbEl = _this$_refs3.horizontalBarThumbEl;
-      var container = this._refs.scrollview;
+          horizontalBarThumbEl = _this$_refs3.horizontalBarThumbEl; // const container = this._refs.scrollview;
+
       var scrollview = this.getScrollViewBody();
       var state = this.state;
       var hasScrollX = state.hasScrollX,
-          hasScrollY = state.hasScrollY;
+          hasScrollY = state.hasScrollY; // if (hasScrollX || hasScrollY) {
 
-      if (hasScrollX || hasScrollY) {
-        if (hasScrollY) {
-          verticalBarEl.style.top = scrollBarOffsetTopOrLeft + 'px';
-          verticalBarEl.style.right = scrollBarOffsetRightOrBottom + 'px';
-          verticalBarEl.style.bottom = scrollBarOffsetTopOrLeft + (hasScrollX ? scrollBarSize + scrollBarOffsetRightOrBottom : 0) + 'px';
-        }
-
-        if (hasScrollX) {
-          horizontalBarEl.style.left = scrollBarOffsetTopOrLeft + 'px';
-          horizontalBarEl.style.bottom = scrollBarOffsetRightOrBottom + 'px';
-          horizontalBarEl.style.right = scrollBarOffsetTopOrLeft + (hasScrollY ? scrollBarSize + scrollBarOffsetRightOrBottom : 0) + 'px';
-        }
+      if (hasScrollY) {
+        verticalBarEl.style.top = scrollBarOffsetTopOrLeft + 'px';
+        verticalBarEl.style.right = scrollBarOffsetRightOrBottom + 'px';
+        verticalBarEl.style.bottom = scrollBarOffsetTopOrLeft + (hasScrollX ? scrollBarSize + scrollBarOffsetRightOrBottom : 0) + 'px';
       }
+
+      if (hasScrollX) {
+        horizontalBarEl.style.left = scrollBarOffsetTopOrLeft + 'px';
+        horizontalBarEl.style.bottom = scrollBarOffsetRightOrBottom + 'px';
+        horizontalBarEl.style.right = scrollBarOffsetTopOrLeft + (hasScrollY ? scrollBarSize + scrollBarOffsetRightOrBottom : 0) + 'px';
+      } // }
+
 
       if (hasScrollY) {
         var thumbSize = this.getThumbSize('y');
@@ -1393,4 +1419,4 @@ module.exports = __webpack_require__(/*! D:\wamp64\www\github-project\react-widg
 /***/ })
 
 /******/ });
-//# sourceMappingURL=index.6fbf0981.js.map
+//# sourceMappingURL=index.705919fe.js.map

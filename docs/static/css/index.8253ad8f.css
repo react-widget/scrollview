@@ -38,7 +38,8 @@
 .s-item {
   padding: 20px;
   text-align: center;
-  border-bottom: 1px solid #CCC; }
+  border-bottom: 1px solid #CCC;
+  width: 350px; }
 
 .animated {
   -webkit-animation-duration: .3s;
@@ -370,4 +371,4 @@
   overflow: hidden; }
 
 
-/*# sourceMappingURL=index.d67ca476.css.map*/
+/*# sourceMappingURL=index.8253ad8f.css.map*/
