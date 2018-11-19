@@ -12,6 +12,7 @@ export default class ScrollView extends React.Component {
         className: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
         scrollViewBodyCls: PropTypes.string,
         scrollViewBodyStyle: PropTypes.object,
+        scrollViewBodyProps: PropTypes.object,
         overflow: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
         overflowX: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
         overflowY: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
@@ -38,6 +39,7 @@ export default class ScrollView extends React.Component {
         prefixCls: 'rw-scrollview',
         className: '',
         scrollViewBodyCls: '',
+        scrollViewBodyProps: {},
         overflow: 'auto',
         overflowX: 'auto',
         overflowY: 'auto',
@@ -566,7 +568,18 @@ export default class ScrollView extends React.Component {
     }
 
     render() {
-        const { prefixCls, className, scrollViewBodyCls, style = {}, component = 'div', scrollViewBodyStyle = {}, children, ...others } = this.props;
+        const {
+            prefixCls,
+            className,
+            scrollViewBodyCls,
+            style = {},
+            component = 'div',
+            scrollViewBodyStyle = {},
+            scrollViewBodyProps,
+            children,
+            ...others
+        } = this.props;
+
         const { shouldComponentUpdate, hasScrollX, hasScrollY } = this.state;
 
         const classes = classNames({
@@ -591,11 +604,12 @@ export default class ScrollView extends React.Component {
             >
                 <ScrollViewBody
                     ref={this.saveRef.bind(this, "scrollviewBody")}
-                    className={bodyClasses}
-                    style={scrollViewBodyStyle}
                     component={component}
                     onScroll={this.handleScroll}
                     shouldComponentUpdate={shouldComponentUpdate}
+                    {...scrollViewBodyProps}
+                    className={bodyClasses}
+                    style={scrollViewBodyStyle}
                 >
                     {children}
                 </ScrollViewBody>

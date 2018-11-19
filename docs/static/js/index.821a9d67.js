@@ -1104,8 +1104,9 @@ function (_React$Component) {
           component = _this$props8$componen === void 0 ? 'div' : _this$props8$componen,
           _this$props8$scrollVi = _this$props8.scrollViewBodyStyle,
           scrollViewBodyStyle = _this$props8$scrollVi === void 0 ? {} : _this$props8$scrollVi,
+          scrollViewBodyProps = _this$props8.scrollViewBodyProps,
           children = _this$props8.children,
-          others = (0, _objectWithoutProperties2.default)(_this$props8, ["prefixCls", "className", "scrollViewBodyCls", "style", "component", "scrollViewBodyStyle", "children"]);
+          others = (0, _objectWithoutProperties2.default)(_this$props8, ["prefixCls", "className", "scrollViewBodyCls", "style", "component", "scrollViewBodyStyle", "scrollViewBodyProps", "children"]);
       var _this$state4 = this.state,
           shouldComponentUpdate = _this$state4.shouldComponentUpdate,
           hasScrollX = _this$state4.hasScrollX,
@@ -1118,14 +1119,15 @@ function (_React$Component) {
         className: classes,
         style: style,
         onWheel: this.handleWheel
-      }), _react.default.createElement(_ScrollViewBody.default, {
+      }), _react.default.createElement(_ScrollViewBody.default, (0, _extends2.default)({
         ref: this.saveRef.bind(this, "scrollviewBody"),
-        className: bodyClasses,
-        style: scrollViewBodyStyle,
         component: component,
         onScroll: this.handleScroll,
         shouldComponentUpdate: shouldComponentUpdate
-      }, children), hasScrollX ? this.getScrollBar('x') : null, hasScrollY ? this.getScrollBar('y') : null);
+      }, scrollViewBodyProps, {
+        className: bodyClasses,
+        style: scrollViewBodyStyle
+      }), children), hasScrollX ? this.getScrollBar('x') : null, hasScrollY ? this.getScrollBar('y') : null);
     }
   }]);
   return ScrollView;
@@ -1137,6 +1139,7 @@ exports.default = ScrollView;
   className: _propTypes.default.oneOfType([_propTypes.default.string, _propTypes.default.object]),
   scrollViewBodyCls: _propTypes.default.string,
   scrollViewBodyStyle: _propTypes.default.object,
+  scrollViewBodyProps: _propTypes.default.object,
   overflow: _propTypes.default.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
   overflowX: _propTypes.default.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
   overflowY: _propTypes.default.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
@@ -1162,6 +1165,7 @@ exports.default = ScrollView;
   prefixCls: 'rw-scrollview',
   className: '',
   scrollViewBodyCls: '',
+  scrollViewBodyProps: {},
   overflow: 'auto',
   overflowX: 'auto',
   overflowY: 'auto',
@@ -1419,4 +1423,4 @@ module.exports = __webpack_require__(/*! D:\wamp64\www\github-project\react-widg
 /***/ })
 
 /******/ });
-//# sourceMappingURL=index.705919fe.js.map
+//# sourceMappingURL=index.821a9d67.js.map
