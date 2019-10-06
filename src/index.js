@@ -1,10 +1,18 @@
-import { disableSelection, on, contains, getOffset, isVisible, getStyle } from './util/dom';
-import React from 'react';
-import { findDOMNode } from 'react-dom';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
-import omit from 'object.omit';
-import ScrollViewBody from './ScrollViewBody';
+import {
+    disableSelection,
+    on,
+    contains,
+    getOffset,
+    isVisible,
+    getStyle
+} from "./util/dom";
+import React, { Fragment } from "react";
+import { findDOMNode } from "react-dom";
+import PropTypes from "prop-types";
+import classNames from "classnames";
+import omit from "lodash/omit";
+import ScrollViewBody from "./ScrollViewBody";
+import ReactResizeObserver from "react-widget-resize-observer";
 
 export default class ScrollView extends React.Component {
     static propTypes = {
@@ -13,10 +21,10 @@ export default class ScrollView extends React.Component {
         scrollViewBodyCls: PropTypes.string,
         scrollViewBodyStyle: PropTypes.object,
         scrollViewBodyProps: PropTypes.object,
-        overflow: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
-        overflowX: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
-        overflowY: PropTypes.oneOfType(['hidden', 'auto', 'scroll', 'visible']),
-        wheelDir: PropTypes.oneOfType(['x', 'y']),
+        overflow: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
+        overflowX: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
+        overflowY: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
+        wheelDir: PropTypes.oneOf(["x", "y"]),
         thumbCls: PropTypes.string,
         trackCls: PropTypes.string,
         scrollBarSize: PropTypes.number,
@@ -32,23 +40,23 @@ export default class ScrollView extends React.Component {
         onHScrollEnd: PropTypes.func,
         onVScrollEnd: PropTypes.func,
         onHScrollStart: PropTypes.func,
-        onVScrollStart: PropTypes.func,
+        onVScrollStart: PropTypes.func
     };
 
     static defaultProps = {
-        prefixCls: 'rw-scrollview',
-        className: '',
-        scrollViewBodyCls: '',
+        prefixCls: "rw-scrollview",
+        className: "",
+        scrollViewBodyCls: "",
         scrollViewBodyProps: {},
-        overflow: 'auto',
-        overflowX: 'auto',
-        overflowY: 'auto',
+        overflow: "auto",
+        overflowX: "auto",
+        overflowY: "auto",
         scrollBarSize: 7,
         scrollBarOffsetTopOrLeft: 2,
         scrollBarOffsetRightOrBottom: 0,
-        wheelDir: 'y',
-        thumbCls: '',
-        trackCls: '',
+        wheelDir: "y",
+        thumbCls: "",
+        trackCls: "",
         thumbSize: null,
         thumbMinSize: 6,
         thumbMaxSize: 999999,
@@ -59,17 +67,17 @@ export default class ScrollView extends React.Component {
         onHScrollEnd: null,
         onVScrollEnd: null,
         onHScrollStart: null,
-        onVScrollStart: null,
+        onVScrollStart: null
     };
 
     static childContextTypes = {
-        ScrollView: PropTypes.object,
+        ScrollView: PropTypes.object
     };
 
     static getDerivedStateFromProps() {
         return {
-            shouldComponentUpdate: true,
-        }
+            shouldComponentUpdate: true
+        };
     }
 
     constructor(props) {
@@ -87,38 +95,21 @@ export default class ScrollView extends React.Component {
             scrollXRatio: null,
             scrollYRatio: null,
             scrollTop: 0,
-            scrollLeft: 0,
-            // origScrollViewPaddingRight: null,
-            // origScrollViewPaddingBottom: null,
-            // lastScrollViewPaddingRight: null,
-            // lastScrollViewPaddingBottom: null,
+            scrollLeft: 0
         };
     }
 
     getChildContext() {
         return {
-            ScrollView: this,
+            ScrollView: this
         };
     }
 
     componentDidMount() {
-
         this.updateScrollBarLayoutAndPosition();
     }
 
-    // componentWillReceiveProps() {
-    //     const state = this.state;
-    //     // state.origScrollViewPaddingRight = null;
-    //     // state.lastScrollViewPaddingRight = null;
-    //     // state.origScrollViewPaddingBottom = null;
-    //     // state.lastScrollViewPaddingBottom = null;
-
-    //     this.setState({
-    //         shouldComponentUpdate: true,
-    //     });
-    // }
-
-    _updating = false
+    _updating = false;
     startUpdating() {
         this._updating = true;
     }
@@ -132,8 +123,7 @@ export default class ScrollView extends React.Component {
     }
 
     componentDidUpdate() {
-        if (!this.isUpdating())
-            this.updateScrollBarLayoutAndPosition();
+        if (!this.isUpdating()) this.updateScrollBarLayoutAndPosition();
     }
 
     saveRef(name, node) {
@@ -145,17 +135,21 @@ export default class ScrollView extends React.Component {
     }
 
     handleWheel = (() => {
-        const defNoop = function (e) {
+        const defNoop = function(e) {
             e.preventDefault();
         };
-        const noop = function () { };
+        const noop = function() {};
         //滚动到底部时下一次滚动不需要禁用默认行为
         //dir 1 向下 -1 向上
         let nextEnd = defNoop;
         let lastDir = 1;
-        return (e) => {
+        return e => {
             const deltaY = e.deltaY;
-            const { wheelStep, wheelDir, enablePreventDefaultOnEnd } = this.props;
+            const {
+                wheelStep,
+                wheelDir,
+                enablePreventDefaultOnEnd
+            } = this.props;
             const curDir = deltaY > 0 ? 1 : -1;
             const state = this.state;
 
@@ -164,21 +158,24 @@ export default class ScrollView extends React.Component {
                 nextEnd = defNoop;
             }
 
-            if (!state.hasScrollY && wheelDir === 'y') {
+            if (!state.hasScrollY && wheelDir === "y") {
                 return;
-            } else if (!state.hasScrollX && wheelDir === 'x') {
+            } else if (!state.hasScrollX && wheelDir === "x") {
                 return;
             }
 
             this.scrollTo(
                 wheelDir,
-                deltaY > 0 ?
-                    (this.getScrollPos(wheelDir) + wheelStep) :
-                    (this.getScrollPos(wheelDir) - wheelStep)
+                deltaY > 0
+                    ? this.getScrollPos(wheelDir) + wheelStep
+                    : this.getScrollPos(wheelDir) - wheelStep
             );
 
-            if (enablePreventDefaultOnEnd/* && wheelDir !== 'x' */) {
-                var isEnd = deltaY > 0 ? this.isScrollEnd(wheelDir) : this.getScrollPos(wheelDir) <= 0;
+            if (enablePreventDefaultOnEnd /* && wheelDir !== 'x' */) {
+                var isEnd =
+                    deltaY > 0
+                        ? this.isScrollEnd(wheelDir)
+                        : this.getScrollPos(wheelDir) <= 0;
                 if (!isEnd) {
                     e.preventDefault();
                     nextEnd = defNoop;
@@ -189,11 +186,17 @@ export default class ScrollView extends React.Component {
             } else {
                 e.preventDefault();
             }
-        }
-    })()
+        };
+    })();
 
-    handleScroll = (e) => {
-        const { onScroll, onHScrollEnd, onHScrollStart, onVScrollEnd, onVScrollStart } = this.props;
+    handleScroll = e => {
+        const {
+            onScroll,
+            onHScrollEnd,
+            onHScrollStart,
+            onVScrollEnd,
+            onVScrollStart
+        } = this.props;
         const state = this.state;
         const target = e.target;
 
@@ -210,7 +213,7 @@ export default class ScrollView extends React.Component {
         }
 
         if (lastScrollTop !== state.scrollTop) {
-            if (onVScrollEnd && this.isScrollEnd('y')) {
+            if (onVScrollEnd && this.isScrollEnd("y")) {
                 onVScrollEnd.call(this, e);
             }
             if (onVScrollStart && state.scrollTop === 0) {
@@ -219,17 +222,16 @@ export default class ScrollView extends React.Component {
         }
 
         if (lastScrollLeft !== state.scrollLeft) {
-            if (onHScrollEnd && this.isScrollEnd('x')) {
+            if (onHScrollEnd && this.isScrollEnd("x")) {
                 onHScrollEnd.call(this, e);
             }
             if (onHScrollStart && state.scrollLeft === 0) {
                 onHScrollStart.call(this, e);
             }
         }
+    };
 
-    }
-
-    handleTrackMouseDown(e, dir = 'y') {
+    handleTrackMouseDown(e, dir = "y") {
         if (e.button !== 0) {
             return;
         }
@@ -237,61 +239,70 @@ export default class ScrollView extends React.Component {
         const { scrollXRatio, scrollYRatio } = this.state;
         const { verticalBarThumbEl, horizontalBarThumbEl } = this._refs;
         const rect = target.getBoundingClientRect();
-        const isVertical = dir === 'y';
-        const proto = isVertical ? 'scrollTop' : 'scrollLeft';
-        const trackPos = rect[isVertical ? 'top' : 'left'] +
-            ((document.documentElement && document.documentElement[proto]) ?
-                document.documentElement[proto] : document.body[proto]);
+        const isVertical = dir === "y";
+        const proto = isVertical ? "scrollTop" : "scrollLeft";
+        const trackPos =
+            rect[isVertical ? "top" : "left"] +
+            (document.documentElement && document.documentElement[proto]
+                ? document.documentElement[proto]
+                : document.body[proto]);
         const thumbEl = isVertical ? verticalBarThumbEl : horizontalBarThumbEl;
 
-        const clickPagePos = e[isVertical ? 'pageY' : 'pageX'];
+        const clickPagePos = e[isVertical ? "pageY" : "pageX"];
         const clickPos = clickPagePos - trackPos;
 
-        const thumbPos = parseInt(getStyle(thumbEl, isVertical ? 'top' : 'left'), 10);
-        const thumbSize = thumbEl[isVertical ? 'offsetHeight' : 'offsetWidth'];
+        const thumbPos = parseInt(
+            getStyle(thumbEl, isVertical ? "top" : "left"),
+            10
+        );
+        const thumbSize = thumbEl[isVertical ? "offsetHeight" : "offsetWidth"];
 
         const ratio = isVertical ? scrollYRatio : scrollXRatio;
 
         if (clickPos < thumbPos) {
             this.scrollTo(dir, (clickPagePos - trackPos) * ratio);
         } else {
-            this.scrollTo(dir, (thumbPos + clickPagePos - (thumbPos + thumbSize + trackPos)) * ratio);
+            this.scrollTo(
+                dir,
+                (thumbPos + clickPagePos - (thumbPos + thumbSize + trackPos)) *
+                    ratio
+            );
         }
     }
 
-    handleThumbMouseDown(e, dir = 'y') {
+    handleThumbMouseDown(e, dir = "y") {
         const doc = document;
         const state = this.state;
         const startY = e.pageY;
         const startX = e.pageX;
         const start = this.getScrollPos(dir);
-        const ratio = state[dir === 'y' ? 'scrollYRatio' : 'scrollXRatio'];
+        const ratio = state[dir === "y" ? "scrollYRatio" : "scrollXRatio"];
 
         let moveOff, upOff, cursor;
 
         cursor = doc.body.style.cursor;
 
-        doc.body.style.cursor = 'default';
+        doc.body.style.cursor = "default";
 
         const enableSelection = disableSelection(doc.body);
 
-        upOff = on(doc, 'mouseup', (e) => {
-            enableSelection()
+        upOff = on(doc, "mouseup", e => {
+            enableSelection();
             upOff();
             moveOff();
             doc.body.style.cursor = cursor;
         });
 
-        moveOff = on(doc, 'mousemove', (e) => {
-            var moveDist = dir === 'y' ? (e.pageY - startY) : (e.pageX - startX);
+        moveOff = on(doc, "mousemove", e => {
+            var moveDist = dir === "y" ? e.pageY - startY : e.pageX - startX;
             var sPos = start + moveDist * ratio;
             this.scrollTo(dir, sPos);
         });
     }
 
-    scrollTo(dir = 'y', pos) {
+    scrollTo(dir = "y", pos) {
         const scrollview = this.getScrollViewBody();
-        const proto = dir === 'y' ? 'scrollTop' : 'scrollLeft';
+        const proto = dir === "y" ? "scrollTop" : "scrollLeft";
 
         if (this.state[proto] === pos) {
             return;
@@ -301,16 +312,16 @@ export default class ScrollView extends React.Component {
     }
 
     scrollX(sLeft) {
-        this.scrollTo('x', sLeft)
+        this.scrollTo("x", sLeft);
     }
 
     scrollY(sTop) {
-        this.scrollTo('y', sTop)
+        this.scrollTo("y", sTop);
     }
 
-    scrollEnd(dir = 'y') {
+    scrollEnd(dir = "y") {
         const scrollview = this.getScrollViewBody();
-        const proto = dir === 'y' ? 'Height' : 'Width';
+        const proto = dir === "y" ? "Height" : "Width";
 
         const c = scrollview[`client${proto}`];
         const s = scrollview[`scroll${proto}`];
@@ -343,14 +354,22 @@ export default class ScrollView extends React.Component {
 
         if (pTop > tTop) {
             scrollview.scrollTop = sTop - (pTop - tTop);
-        } else if (pBottom < (tTop + el.offsetHeight)) {
-            scrollview.scrollTop = sTop + tTop - pBottom + Math.min(el.offsetHeight, scrollview.clientHeight);
+        } else if (pBottom < tTop + el.offsetHeight) {
+            scrollview.scrollTop =
+                sTop +
+                tTop -
+                pBottom +
+                Math.min(el.offsetHeight, scrollview.clientHeight);
         }
 
         if (pLeft > tLeft) {
             scrollview.scrollLeft = sLeft - (pLeft - tLeft);
-        } else if (pRight < (tLeft + el.offsetWidth)) {
-            scrollview.scrollLeft = sLeft + tLeft - pRight + Math.min(el.offsetWidth, scrollview.clientWidth);
+        } else if (pRight < tLeft + el.offsetWidth) {
+            scrollview.scrollLeft =
+                sLeft +
+                tLeft -
+                pRight +
+                Math.min(el.offsetWidth, scrollview.clientWidth);
         }
     }
 
@@ -367,7 +386,8 @@ export default class ScrollView extends React.Component {
         const minTop = 0;
         const maxTop = verticalBarWrapEl.clientHeight - thumbYSize;
 
-        this._refs.verticalBarThumbEl.style.top = Math.min(Math.max(scrollTop / scrollYRatio, minTop), maxTop) + 'px';
+        this._refs.verticalBarThumbEl.style.top =
+            Math.min(Math.max(scrollTop / scrollYRatio, minTop), maxTop) + "px";
     }
 
     setThumbXPos() {
@@ -378,24 +398,37 @@ export default class ScrollView extends React.Component {
         const minLeft = 0;
         const maxLeft = horizontalBarWrapEl.clientWidth - thumbXSize;
 
-        this._refs.horizontalBarThumbEl.style.left = Math.min(Math.max(scrollLeft / scrollXRatio, minLeft), maxLeft) + 'px';
+        this._refs.horizontalBarThumbEl.style.left =
+            Math.min(Math.max(scrollLeft / scrollXRatio, minLeft), maxLeft) +
+            "px";
     }
 
     getScrollViewBody() {
-        return findDOMNode(this._refs.scrollviewBody);
+        return findDOMNode(this);
+        // return findDOMNode(this._refs.scrollviewBody);
     }
 
-    getThumbSize(dir = 'y') {
+    getThumbSize(dir = "y") {
         const { thumbSize, thumbMinSize, thumbMaxSize } = this.props;
         const { verticalBarWrapEl, horizontalBarWrapEl } = this._refs;
         const scrollview = this.getScrollViewBody();
-        const isVertical = dir === 'y';
-        const client = isVertical ? scrollview.clientHeight : scrollview.clientWidth,
-            scroll = isVertical ? scrollview.scrollHeight : scrollview.scrollWidth,
-            trackSize = isVertical ? verticalBarWrapEl.clientHeight : horizontalBarWrapEl.clientWidth;
+        const isVertical = dir === "y";
+        const client = isVertical
+                ? scrollview.clientHeight
+                : scrollview.clientWidth,
+            scroll = isVertical
+                ? scrollview.scrollHeight
+                : scrollview.scrollWidth,
+            trackSize = isVertical
+                ? verticalBarWrapEl.clientHeight
+                : horizontalBarWrapEl.clientWidth;
 
-        return thumbSize && thumbSize > 0 ? thumbSize :
-            Math.min(Math.max(thumbMinSize, client / scroll * trackSize), thumbMaxSize);
+        return thumbSize && thumbSize > 0
+            ? thumbSize
+            : Math.min(
+                  Math.max(thumbMinSize, (client / scroll) * trackSize),
+                  thumbMaxSize
+              );
     }
 
     //判断是否创建滚动条
@@ -403,15 +436,15 @@ export default class ScrollView extends React.Component {
         const { overflow, overflowY } = this.props;
         const scrollview = this.getScrollViewBody();
 
-        if (!overflowY && (overflow === 'hidden' || overflow === 'visible')) {
+        if (!overflowY && (overflow === "hidden" || overflow === "visible")) {
             return false;
-        } else if (overflow === 'scroll') {
+        } else if (overflow === "scroll") {
             return true;
         }
 
-        if (overflowY === 'hidden' || overflowY === 'visible') {
+        if (overflowY === "hidden" || overflowY === "visible") {
             return false;
-        } else if (overflow === 'scroll') {
+        } else if (overflow === "scroll") {
             return true;
         }
 
@@ -422,39 +455,41 @@ export default class ScrollView extends React.Component {
         const { overflow, overflowX } = this.props;
         const scrollview = this.getScrollViewBody();
 
-        if (!overflowX && (overflow === 'hidden' || overflow === 'visible')) {
+        if (!overflowX && (overflow === "hidden" || overflow === "visible")) {
             return false;
-        } else if (overflow === 'scroll') {
+        } else if (overflow === "scroll") {
             return true;
         }
 
-        if (overflowX === 'hidden' || overflowX === 'visible') {
+        if (overflowX === "hidden" || overflowX === "visible") {
             return false;
-        } else if (overflow === 'scroll') {
+        } else if (overflow === "scroll") {
             return true;
         }
 
         return scrollview.scrollWidth - scrollview.clientWidth > 1;
     }
 
-    isScrollEnd(dir = 'y') {
+    isScrollEnd(dir = "y") {
         const scrollview = this.getScrollViewBody();
 
-        return dir === 'y' ?
-            scrollview.scrollTop >= (scrollview.scrollHeight - scrollview.clientHeight) :
-            scrollview.scrollLeft >= (scrollview.scrollWidth - scrollview.clientWidth);
+        return dir === "y"
+            ? scrollview.scrollTop >=
+                  scrollview.scrollHeight - scrollview.clientHeight
+            : scrollview.scrollLeft >=
+                  scrollview.scrollWidth - scrollview.clientWidth;
     }
 
-    getScrollPos(dir = 'y') {
+    getScrollPos(dir = "y") {
         const scrollview = this.getScrollViewBody();
 
-        return scrollview[dir === 'y' ? 'scrollTop' : 'scrollLeft'];
+        return scrollview[dir === "y" ? "scrollTop" : "scrollLeft"];
     }
 
-    hasScroll(dir = 'y') {
-        return dir === 'y' ?
-            this.hasVerticalScrollBar() :
-            this.hasHorizontalScrollBar();
+    hasScroll(dir = "y") {
+        return dir === "y"
+            ? this.hasVerticalScrollBar()
+            : this.hasHorizontalScrollBar();
     }
 
     refreshScrollBar() {
@@ -465,102 +500,179 @@ export default class ScrollView extends React.Component {
         this.updateScrollBarLayoutAndPosition();
     }
 
-    updateScrollBarLayoutAndPosition() {
-        const hasScrollX = this.hasScroll('x'),
-            hasScrollY = this.hasScroll('y');
+    updateScrollBarLayoutAndPosition = () => {
+        const hasScrollX = this.hasScroll("x"),
+            hasScrollY = this.hasScroll("y");
 
         this.startUpdating();
 
-        this.setState({
-            shouldComponentUpdate: false,
-            hasScrollX,
-            hasScrollY
-        }, () => {
+        this.setState(
+            {
+                shouldComponentUpdate: false,
+                hasScrollX,
+                hasScrollY
+            },
+            () => {
+                this.updateScrollBarLayout();
+                this.updateScrollBarPosition();
 
-            this.updateScrollBarLayout();
-            this.updateScrollBarPosition();
-
-            this.stopUpdating();
-        });
-    }
+                this.stopUpdating();
+            }
+        );
+    };
 
     updateScrollBarLayout() {
-        const { scrollBarSize, scrollBarOffsetTopOrLeft, scrollBarOffsetRightOrBottom } = this.props;
-        const { verticalBarEl, horizontalBarEl, verticalBarWrapEl, horizontalBarWrapEl, verticalBarThumbEl, horizontalBarThumbEl } = this._refs;
-        // const container = this._refs.scrollview;
+        const {
+            scrollBarSize,
+            scrollBarOffsetTopOrLeft,
+            scrollBarOffsetRightOrBottom
+        } = this.props;
+        const {
+            verticalBarEl,
+            horizontalBarEl,
+            verticalBarWrapEl,
+            horizontalBarWrapEl,
+            verticalBarThumbEl,
+            horizontalBarThumbEl
+        } = this._refs;
+        const container = this.getRef("scrollview");
         const scrollview = this.getScrollViewBody();
         const state = this.state;
         const { hasScrollX, hasScrollY } = state;
+        const height = container.clientHeight;
+        const width = container.clientWidth;
+        // const sTop = scrollview.scrollTop;
+        // const sLeft = scrollview.scrollLeft;
 
         // if (hasScrollX || hasScrollY) {
         if (hasScrollY) {
-            verticalBarEl.style.top = scrollBarOffsetTopOrLeft + 'px';
-            verticalBarEl.style.right = scrollBarOffsetRightOrBottom + 'px';
-            verticalBarEl.style.bottom = scrollBarOffsetTopOrLeft + (hasScrollX ? (scrollBarSize + scrollBarOffsetRightOrBottom) : 0) + 'px';
+            verticalBarEl.style.top = scrollBarOffsetTopOrLeft + "px";
+            // verticalBarEl.style.right = sLeft * -1 + "px";
+            verticalBarEl.style.height = height + "px";
+            //     verticalBarEl.style.bottom =
+            //         scrollBarOffsetTopOrLeft +
+            //         (hasScrollX
+            //             ? scrollBarSize + scrollBarOffsetRightOrBottom
+            //             : 0) +
+            //         "px";
         }
 
         if (hasScrollX) {
-            horizontalBarEl.style.left = scrollBarOffsetTopOrLeft + 'px';
-            horizontalBarEl.style.bottom = scrollBarOffsetRightOrBottom + 'px';
-            horizontalBarEl.style.right = scrollBarOffsetTopOrLeft + (hasScrollY ? (scrollBarSize + scrollBarOffsetRightOrBottom) : 0) + 'px';
+            horizontalBarEl.style.left = scrollBarOffsetTopOrLeft + "px";
+            // horizontalBarEl.style.bottom = sTop + -1 + "px";
+            horizontalBarEl.style.width = width + "px";
+            // horizontalBarEl.style.right =
+            //     scrollBarOffsetTopOrLeft +
+            //     (hasScrollY
+            //         ? scrollBarSize + scrollBarOffsetRightOrBottom
+            //         : 0) +
+            //     "px";
         }
         // }
 
         if (hasScrollY) {
-            let thumbSize = this.getThumbSize('y');
+            let thumbSize = this.getThumbSize("y");
             state.thumbYSize = thumbSize;
-            verticalBarThumbEl.style.height = thumbSize + 'px';
-            state.scrollYRatio = (scrollview.scrollHeight - scrollview.clientHeight) / (verticalBarWrapEl.clientHeight - thumbSize);
+            verticalBarThumbEl.style.height = thumbSize + "px";
+            state.scrollYRatio =
+                (scrollview.scrollHeight - scrollview.clientHeight) /
+                (verticalBarWrapEl.clientHeight - thumbSize);
         }
 
         if (hasScrollX) {
-            let thumbSize = this.getThumbSize('x');
+            let thumbSize = this.getThumbSize("x");
             state.thumbXSize = thumbSize;
-            horizontalBarThumbEl.style.width = thumbSize + 'px';
-            state.scrollXRatio = (scrollview.scrollWidth - scrollview.clientWidth) / (horizontalBarWrapEl.clientWidth - thumbSize);
+            horizontalBarThumbEl.style.width = thumbSize + "px";
+            state.scrollXRatio =
+                (scrollview.scrollWidth - scrollview.clientWidth) /
+                (horizontalBarWrapEl.clientWidth - thumbSize);
+        }
+    }
+
+    updateScrollBar() {
+        const scrollview = this.getScrollViewBody();
+
+        const sTop = scrollview.scrollTop;
+        const sLeft = scrollview.scrollLeft;
+        const verticalBarEl = this.getRef("verticalBarEl");
+        const horizontalBarEl = this.getRef("horizontalBarEl");
+
+        if (verticalBarEl) {
+            verticalBarEl.style["top"] = sTop + "px";
+            if (horizontalBarEl) {
+                horizontalBarEl.style["bottom"] = `${sTop * -1}px`;
+            }
+        }
+
+        if (horizontalBarEl) {
+            horizontalBarEl.style["left"] = sLeft + "px";
+            if (verticalBarEl) {
+                verticalBarEl.style["right"] = `${sLeft * -1}px`;
+            }
         }
     }
 
     updateScrollBarPosition() {
+        this.updateScrollBar();
         this.setThumbPos();
     }
 
-    getScrollBar(dir = 'y') {
-        const { prefixCls, showTrack, thumbCls, scrollBarSize, trackCls } = this.props;
-        const isVertical = dir === 'y';
-        const dirCls = `${prefixCls}-bar-${isVertical ? 'vertical' : 'horizontal'}`;
+    getScrollBar(dir = "y") {
+        const {
+            prefixCls,
+            showTrack,
+            thumbCls,
+            scrollBarSize,
+            trackCls
+        } = this.props;
+        const isVertical = dir === "y";
+        const dirCls = `${prefixCls}-bar-${
+            isVertical ? "vertical" : "horizontal"
+        }`;
 
-        const scrollbarRef = isVertical ? 'verticalBarEl' : 'horizontalBarEl',
-            scrollbarWrapRef = isVertical ? 'verticalBarWrapEl' : 'horizontalBarWrapEl',
-            scrollbarTrackRef = isVertical ? 'verticalBarTrackEl' : 'horizontalBarTrackEl',
-            scrollbarThumbRef = isVertical ? 'verticalBarThumbEl' : 'horizontalBarThumbEl';
+        const scrollbarRef = isVertical ? "verticalBarEl" : "horizontalBarEl",
+            scrollbarWrapRef = isVertical
+                ? "verticalBarWrapEl"
+                : "horizontalBarWrapEl",
+            scrollbarTrackRef = isVertical
+                ? "verticalBarTrackEl"
+                : "horizontalBarTrackEl",
+            scrollbarThumbRef = isVertical
+                ? "verticalBarThumbEl"
+                : "horizontalBarThumbEl";
 
         const barStyle = {
-            [isVertical ? 'width' : 'height']: scrollBarSize + 'px'
+            [isVertical ? "width" : "height"]: scrollBarSize + "px"
         };
 
         return (
-            <div ref={this.saveRef.bind(this, scrollbarRef)} style={barStyle} className={classNames(`${prefixCls}-bar`, dirCls)}>
-                <div ref={this.saveRef.bind(this, scrollbarWrapRef)} className={`${prefixCls}-bar-wrap`}>
-                    {
-                        showTrack ?
-                            <div
-                                ref={this.saveRef.bind(this, scrollbarTrackRef)}
-                                className={classNames({
-                                    [`${prefixCls}-bar-track`]: true,
-                                    [trackCls]: trackCls
-                                })}
-                                onMouseDown={(e) => this.handleTrackMouseDown(e, dir)}
-                            ></div> :
-                            null
-                    }
+            <div
+                key={scrollbarRef}
+                ref={this.saveRef.bind(this, scrollbarRef)}
+                style={barStyle}
+                className={classNames(`${prefixCls}-bar`, dirCls)}
+            >
+                <div
+                    ref={this.saveRef.bind(this, scrollbarWrapRef)}
+                    className={`${prefixCls}-bar-wrap`}
+                >
+                    {showTrack ? (
+                        <div
+                            ref={this.saveRef.bind(this, scrollbarTrackRef)}
+                            className={classNames({
+                                [`${prefixCls}-bar-track`]: true,
+                                [trackCls]: trackCls
+                            })}
+                            onMouseDown={e => this.handleTrackMouseDown(e, dir)}
+                        ></div>
+                    ) : null}
                     <div
                         ref={this.saveRef.bind(this, scrollbarThumbRef)}
                         className={classNames({
                             [`${prefixCls}-bar-thumb`]: true,
                             [thumbCls]: thumbCls
                         })}
-                        onMouseDown={(e) => this.handleThumbMouseDown(e, dir)}
+                        onMouseDown={e => this.handleThumbMouseDown(e, dir)}
                     ></div>
                 </div>
             </div>
@@ -573,7 +685,7 @@ export default class ScrollView extends React.Component {
             className,
             scrollViewBodyCls,
             style = {},
-            component = 'div',
+            component = Fragment,
             scrollViewBodyStyle = {},
             scrollViewBodyProps,
             children,
@@ -584,38 +696,43 @@ export default class ScrollView extends React.Component {
 
         const classes = classNames({
             [`${prefixCls}`]: true,
-            [`${className}`]: className,
+            [`${className}`]: className
         });
 
         const bodyClasses = classNames({
             [`${prefixCls}-body`]: true,
-            [`${scrollViewBodyCls}`]: scrollViewBodyCls,
+            [`${scrollViewBodyCls}`]: scrollViewBodyCls
         });
 
         const otherProps = omit(others, Object.keys(ScrollView.defaultProps));
 
         return (
-            <div
-                {...otherProps}
-                ref={this.saveRef.bind(this, "scrollview")}
-                className={classes}
-                style={style}
-                onWheel={this.handleWheel}
+            <ReactResizeObserver
+                onResize={this.updateScrollBarLayoutAndPosition}
             >
-                <ScrollViewBody
-                    ref={this.saveRef.bind(this, "scrollviewBody")}
-                    component={component}
+                <div
+                    {...otherProps}
+                    ref={this.saveRef.bind(this, "scrollview")}
+                    className={classes}
+                    style={style}
+                    onWheel={this.handleWheel}
                     onScroll={this.handleScroll}
-                    shouldComponentUpdate={shouldComponentUpdate}
-                    {...scrollViewBodyProps}
-                    className={bodyClasses}
-                    style={scrollViewBodyStyle}
                 >
-                    {children}
-                </ScrollViewBody>
-                {hasScrollX ? this.getScrollBar('x') : null}
-                {hasScrollY ? this.getScrollBar('y') : null}
-            </div>
-        )
+                    <ScrollViewBody
+                        ref={this.saveRef.bind(this, "scrollviewBody")}
+                        component={component}
+                        // onScroll={this.handleScroll}
+                        shouldComponentUpdate={shouldComponentUpdate}
+                        {...scrollViewBodyProps}
+                        // className={bodyClasses}
+                        // style={scrollViewBodyStyle}
+                    >
+                        {children}
+                    </ScrollViewBody>
+                    {hasScrollX ? this.getScrollBar("x") : null}
+                    {hasScrollY ? this.getScrollBar("y") : null}
+                </div>
+            </ReactResizeObserver>
+        );
     }
 }
