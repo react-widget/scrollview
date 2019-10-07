@@ -1,13 +1,13 @@
 .rw-scrollview {
     position: relative;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    min-width: inherit;
-    min-height: inherit;
-    max-width: inherit;
-    max-height: inherit;
     overflow: hidden;
+    // width: 100%;
+    // height: 100%;
+    // box-sizing: border-box;
+    // min-width: inherit;
+    // min-height: inherit;
+    // max-width: inherit;
+    // max-height: inherit;
 }
 
 .rw-scrollview-body {
@@ -69,6 +69,7 @@
 }
 
 .rw-scrollview-bar-wrap {
+    z-index: 100;
     position: absolute;
     cursor: default;
 }
@@ -82,10 +83,10 @@
 
 .rw-scrollview-bar-track {
     background: rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
+    // border-radius: 3px;
 }
 .rw-scrollview-bar-thumb {
-    border-radius: 3px;
+    // border-radius: 3px;
     background: padding-box padding-box rgba(0, 0, 0, 0.5);
 }
 

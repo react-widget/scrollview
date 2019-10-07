@@ -52,7 +52,7 @@ export default class ScrollView extends React.Component {
         overflowX: "auto",
         overflowY: "auto",
         scrollBarSize: 7,
-        scrollBarOffsetTopOrLeft: 2,
+        scrollBarOffsetTopOrLeft: 0,
         scrollBarOffsetRightOrBottom: 0,
         wheelDir: "y",
         thumbCls: "",
@@ -74,11 +74,11 @@ export default class ScrollView extends React.Component {
         ScrollView: PropTypes.object
     };
 
-    static getDerivedStateFromProps() {
-        return {
-            shouldComponentUpdate: true
-        };
-    }
+    // static getDerivedStateFromProps() {
+    //     return {
+    //         shouldComponentUpdate: true
+    //     };
+    // }
 
     constructor(props) {
         super(props);
@@ -86,7 +86,7 @@ export default class ScrollView extends React.Component {
         this._refs = {};
 
         this.state = {
-            shouldComponentUpdate: true,
+            // shouldComponentUpdate: true,
             hasScrollX: false,
             hasScrollY: false,
             thumbXSize: null,
@@ -206,6 +206,7 @@ export default class ScrollView extends React.Component {
         state.scrollTop = target.scrollTop;
         state.scrollLeft = target.scrollLeft;
 
+        this.updateScrollBarLayout();
         this.updateScrollBarPosition();
 
         if (onScroll) {
@@ -345,9 +346,7 @@ export default class ScrollView extends React.Component {
             pBottom = pOffset.top + scrollview.offsetHeight,
             pRight = pOffset.left + scrollview.offsetWidth,
             tTop = tOffset.top,
-            tLeft = tOffset.left,
-            tBottom = tOffset.top + el.offsetHeight,
-            tRight = tOffset.left + el.offsetWidth;
+            tLeft = tOffset.left;
 
         const sTop = scrollview.scrollTop,
             sLeft = scrollview.scrollLeft;
@@ -405,7 +404,6 @@ export default class ScrollView extends React.Component {
 
     getScrollViewBody() {
         return findDOMNode(this);
-        // return findDOMNode(this._refs.scrollviewBody);
     }
 
     getThumbSize(dir = "y") {
@@ -508,11 +506,12 @@ export default class ScrollView extends React.Component {
 
         this.setState(
             {
-                shouldComponentUpdate: false,
+                // shouldComponentUpdate: false,
                 hasScrollX,
                 hasScrollY
             },
             () => {
+                this.updateScrollRatio();
                 this.updateScrollBarLayout();
                 this.updateScrollBarPosition();
 
@@ -521,54 +520,16 @@ export default class ScrollView extends React.Component {
         );
     };
 
-    updateScrollBarLayout() {
+    updateScrollRatio() {
         const {
-            scrollBarSize,
-            scrollBarOffsetTopOrLeft,
-            scrollBarOffsetRightOrBottom
-        } = this.props;
-        const {
-            verticalBarEl,
-            horizontalBarEl,
             verticalBarWrapEl,
             horizontalBarWrapEl,
             verticalBarThumbEl,
             horizontalBarThumbEl
         } = this._refs;
-        const container = this.getRef("scrollview");
         const scrollview = this.getScrollViewBody();
         const state = this.state;
         const { hasScrollX, hasScrollY } = state;
-        const height = container.clientHeight;
-        const width = container.clientWidth;
-        // const sTop = scrollview.scrollTop;
-        // const sLeft = scrollview.scrollLeft;
-
-        // if (hasScrollX || hasScrollY) {
-        if (hasScrollY) {
-            verticalBarEl.style.top = scrollBarOffsetTopOrLeft + "px";
-            // verticalBarEl.style.right = sLeft * -1 + "px";
-            verticalBarEl.style.height = height + "px";
-            //     verticalBarEl.style.bottom =
-            //         scrollBarOffsetTopOrLeft +
-            //         (hasScrollX
-            //             ? scrollBarSize + scrollBarOffsetRightOrBottom
-            //             : 0) +
-            //         "px";
-        }
-
-        if (hasScrollX) {
-            horizontalBarEl.style.left = scrollBarOffsetTopOrLeft + "px";
-            // horizontalBarEl.style.bottom = sTop + -1 + "px";
-            horizontalBarEl.style.width = width + "px";
-            // horizontalBarEl.style.right =
-            //     scrollBarOffsetTopOrLeft +
-            //     (hasScrollY
-            //         ? scrollBarSize + scrollBarOffsetRightOrBottom
-            //         : 0) +
-            //     "px";
-        }
-        // }
 
         if (hasScrollY) {
             let thumbSize = this.getThumbSize("y");
@@ -589,31 +550,62 @@ export default class ScrollView extends React.Component {
         }
     }
 
-    updateScrollBar() {
+    updateScrollBarLayout() {
+        const {
+            scrollBarSize,
+            scrollBarOffsetTopOrLeft,
+            scrollBarOffsetRightOrBottom
+        } = this.props;
+        const { hasScrollX, hasScrollY } = this.state;
+        const { verticalBarEl, horizontalBarEl } = this._refs;
+        const container = this.getRef("scrollview");
         const scrollview = this.getScrollViewBody();
-
+        const height = container.clientHeight;
+        const width = container.clientWidth;
         const sTop = scrollview.scrollTop;
         const sLeft = scrollview.scrollLeft;
-        const verticalBarEl = this.getRef("verticalBarEl");
-        const horizontalBarEl = this.getRef("horizontalBarEl");
 
-        if (verticalBarEl) {
-            verticalBarEl.style["top"] = sTop + "px";
+        if (hasScrollY && verticalBarEl) {
+            verticalBarEl.style.top = scrollBarOffsetTopOrLeft + sTop + "px";
+            verticalBarEl.style.right =
+                scrollBarOffsetRightOrBottom + sLeft * -1 + "px";
+            verticalBarEl.style.height =
+                height -
+                scrollBarOffsetTopOrLeft -
+                (hasScrollX
+                    ? scrollBarSize +
+                      scrollBarOffsetTopOrLeft +
+                      scrollBarOffsetRightOrBottom
+                    : scrollBarOffsetTopOrLeft) +
+                "px";
             if (horizontalBarEl) {
-                horizontalBarEl.style["bottom"] = `${sTop * -1}px`;
+                horizontalBarEl.style.bottom =
+                    scrollBarOffsetRightOrBottom + sTop * -1 + "px";
             }
         }
 
-        if (horizontalBarEl) {
-            horizontalBarEl.style["left"] = sLeft + "px";
+        if (hasScrollX && horizontalBarEl) {
+            horizontalBarEl.style.left =
+                scrollBarOffsetTopOrLeft + sLeft + "px";
+            horizontalBarEl.style.bottom =
+                scrollBarOffsetRightOrBottom + sTop * -1 + "px";
+            horizontalBarEl.style.width =
+                width -
+                scrollBarOffsetTopOrLeft -
+                (hasScrollY
+                    ? scrollBarSize +
+                      scrollBarOffsetTopOrLeft +
+                      scrollBarOffsetRightOrBottom
+                    : scrollBarOffsetTopOrLeft) +
+                "px";
             if (verticalBarEl) {
-                verticalBarEl.style["right"] = `${sLeft * -1}px`;
+                verticalBarEl.style.right =
+                    scrollBarOffsetRightOrBottom + sLeft * -1 + "px";
             }
         }
     }
 
     updateScrollBarPosition() {
-        this.updateScrollBar();
         this.setThumbPos();
     }
 
@@ -691,8 +683,8 @@ export default class ScrollView extends React.Component {
             children,
             ...others
         } = this.props;
-
-        const { shouldComponentUpdate, hasScrollX, hasScrollY } = this.state;
+        const { hasScrollX, hasScrollY } = this.state;
+        const shouldComponentUpdate = !this._updating;
 
         const classes = classNames({
             [`${prefixCls}`]: true,
@@ -729,8 +721,8 @@ export default class ScrollView extends React.Component {
                     >
                         {children}
                     </ScrollViewBody>
-                    {hasScrollX ? this.getScrollBar("x") : null}
                     {hasScrollY ? this.getScrollBar("y") : null}
+                    {hasScrollX ? this.getScrollBar("x") : null}
                 </div>
             </ReactResizeObserver>
         );
