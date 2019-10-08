@@ -11,16 +11,16 @@ import { findDOMNode } from "react-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import omit from "lodash/omit";
-import ScrollViewBody from "./ScrollViewBody";
+import ShouldComponentUpdate from "./ShouldComponentUpdate";
 import ReactResizeObserver from "react-widget-resize-observer";
 
 export default class ScrollView extends React.Component {
     static propTypes = {
         prefixCls: PropTypes.string,
         className: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-        scrollViewBodyCls: PropTypes.string,
-        scrollViewBodyStyle: PropTypes.object,
-        scrollViewBodyProps: PropTypes.object,
+        // scrollViewBodyCls: PropTypes.string,
+        // scrollViewBodyStyle: PropTypes.object,
+        // scrollViewBodyProps: PropTypes.object,
         overflow: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         overflowX: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         overflowY: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
@@ -44,10 +44,11 @@ export default class ScrollView extends React.Component {
     };
 
     static defaultProps = {
+        scrollViewInnerComponent: Fragment,
         prefixCls: "rw-scrollview",
         className: "",
-        scrollViewBodyCls: "",
-        scrollViewBodyProps: {},
+        // scrollViewBodyCls: "",
+        // scrollViewBodyProps: {},
         overflow: "auto",
         overflowX: "auto",
         overflowY: "auto",
@@ -677,7 +678,7 @@ export default class ScrollView extends React.Component {
             className,
             scrollViewBodyCls,
             style = {},
-            component = Fragment,
+            scrollViewInnerComponent: ScrollViewInnerComponent,
             scrollViewBodyStyle = {},
             scrollViewBodyProps,
             children,
@@ -689,11 +690,6 @@ export default class ScrollView extends React.Component {
         const classes = classNames({
             [`${prefixCls}`]: true,
             [`${className}`]: className
-        });
-
-        const bodyClasses = classNames({
-            [`${prefixCls}-body`]: true,
-            [`${scrollViewBodyCls}`]: scrollViewBodyCls
         });
 
         const otherProps = omit(others, Object.keys(ScrollView.defaultProps));
@@ -710,17 +706,13 @@ export default class ScrollView extends React.Component {
                     onWheel={this.handleWheel}
                     onScroll={this.handleScroll}
                 >
-                    <ScrollViewBody
-                        ref={this.saveRef.bind(this, "scrollviewBody")}
-                        component={component}
-                        // onScroll={this.handleScroll}
+                    <ShouldComponentUpdate
                         shouldComponentUpdate={shouldComponentUpdate}
-                        {...scrollViewBodyProps}
-                        // className={bodyClasses}
-                        // style={scrollViewBodyStyle}
                     >
-                        {children}
-                    </ScrollViewBody>
+                        <ScrollViewInnerComponent>
+                            {children}
+                        </ScrollViewInnerComponent>
+                    </ShouldComponentUpdate>
                     {hasScrollY ? this.getScrollBar("y") : null}
                     {hasScrollX ? this.getScrollBar("x") : null}
                 </div>
