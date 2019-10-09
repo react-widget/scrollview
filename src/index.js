@@ -1,3 +1,9 @@
+import React, { Fragment } from "react";
+import { findDOMNode } from "react-dom";
+import PropTypes from "prop-types";
+import classNames from "classnames";
+import omit from "lodash/omit";
+import ReactResizeObserver from "react-widget-resize-observer";
 import {
     disableSelection,
     on,
@@ -6,21 +12,16 @@ import {
     isVisible,
     getStyle
 } from "./util/dom";
-import React, { Fragment } from "react";
-import { findDOMNode } from "react-dom";
-import PropTypes from "prop-types";
-import classNames from "classnames";
-import omit from "lodash/omit";
 import ShouldComponentUpdate from "./ShouldComponentUpdate";
-import ReactResizeObserver from "react-widget-resize-observer";
+import ScrollViewContext from "./ScrollViewContext";
+import useScrollView from "./useScrollView";
+
+export { useScrollView };
 
 export default class ScrollView extends React.Component {
     static propTypes = {
         prefixCls: PropTypes.string,
         className: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-        // scrollViewBodyCls: PropTypes.string,
-        // scrollViewBodyStyle: PropTypes.object,
-        // scrollViewBodyProps: PropTypes.object,
         overflow: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         overflowX: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         overflowY: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
@@ -47,8 +48,6 @@ export default class ScrollView extends React.Component {
         scrollViewInnerComponent: Fragment,
         prefixCls: "rw-scrollview",
         className: "",
-        // scrollViewBodyCls: "",
-        // scrollViewBodyProps: {},
         overflow: "auto",
         overflowX: "auto",
         overflowY: "auto",
@@ -71,38 +70,20 @@ export default class ScrollView extends React.Component {
         onVScrollStart: null
     };
 
-    static childContextTypes = {
-        ScrollView: PropTypes.object
-    };
-
-    // static getDerivedStateFromProps() {
-    //     return {
-    //         shouldComponentUpdate: true
-    //     };
-    // }
-
     constructor(props) {
         super(props);
 
         this._refs = {};
 
         this.state = {
-            // shouldComponentUpdate: true,
             hasScrollX: false,
             hasScrollY: false,
             thumbXSize: null,
             thumbYSize: null,
-            // isUpdating: false,
             scrollXRatio: null,
             scrollYRatio: null,
             scrollTop: 0,
             scrollLeft: 0
-        };
-    }
-
-    getChildContext() {
-        return {
-            ScrollView: this
         };
     }
 
@@ -207,24 +188,24 @@ export default class ScrollView extends React.Component {
         this.updateScrollBarPosition();
 
         if (onScroll) {
-            onScroll.call(this, state.scrollLeft, state.scrollTop, e);
+            onScroll(e);
         }
 
         if (lastScrollTop !== state.scrollTop) {
             if (onVScrollEnd && this.isScrollEnd("y")) {
-                onVScrollEnd.call(this, e);
+                onVScrollEnd(e);
             }
             if (onVScrollStart && state.scrollTop === 0) {
-                onVScrollStart.call(this, e);
+                onVScrollStart(e);
             }
         }
 
         if (lastScrollLeft !== state.scrollLeft) {
             if (onHScrollEnd && this.isScrollEnd("x")) {
-                onHScrollEnd.call(this, e);
+                onHScrollEnd(e);
             }
             if (onHScrollStart && state.scrollLeft === 0) {
-                onHScrollStart.call(this, e);
+                onHScrollStart(e);
             }
         }
     };
@@ -427,7 +408,7 @@ export default class ScrollView extends React.Component {
     }
 
     //判断是否创建滚动条
-    hasVerticalScrollBar() {
+    hasVerticalScroll() {
         const { overflow, overflowY } = this.props;
         const scrollview = this.getScrollViewBody();
 
@@ -446,7 +427,7 @@ export default class ScrollView extends React.Component {
         return scrollview.scrollHeight - scrollview.clientHeight > 1;
     }
     //判断是否创建滚动条
-    hasHorizontalScrollBar() {
+    hasHorizontalScroll() {
         const { overflow, overflowX } = this.props;
         const scrollview = this.getScrollViewBody();
 
@@ -488,8 +469,8 @@ export default class ScrollView extends React.Component {
 
     hasScroll(dir = "y") {
         return dir === "y"
-            ? this.hasVerticalScrollBar()
-            : this.hasHorizontalScrollBar();
+            ? this.hasVerticalScroll()
+            : this.hasHorizontalScroll();
     }
 
     refreshScrollBar() {
@@ -508,7 +489,6 @@ export default class ScrollView extends React.Component {
 
         this.setState(
             {
-                // shouldComponentUpdate: false,
                 hasScrollX,
                 hasScrollY
             },
@@ -611,7 +591,7 @@ export default class ScrollView extends React.Component {
         this.setThumbPos();
     }
 
-    getScrollBar(dir = "y") {
+    renderScrollBar(dir = "y") {
         const {
             prefixCls,
             showTrack,
@@ -699,25 +679,27 @@ export default class ScrollView extends React.Component {
             <ReactResizeObserver
                 onResize={this.updateScrollBarLayoutAndPosition}
             >
-                <div
-                    {...otherProps}
-                    ref={this.saveRef.bind(this, "scrollview")}
-                    className={classes}
-                    style={style}
-                    // https://github.com/facebook/react/issues/14856#issuecomment-478144231
-                    onWheel={this.handleWheel}
-                    onScroll={this.handleScroll}
-                >
-                    <ShouldComponentUpdate
-                        shouldComponentUpdate={shouldComponentUpdate}
+                <ScrollViewContext.Provider value={this}>
+                    <div
+                        {...otherProps}
+                        ref={this.saveRef.bind(this, "scrollview")}
+                        className={classes}
+                        style={style}
+                        // https://github.com/facebook/react/issues/14856#issuecomment-478144231
+                        onWheel={this.handleWheel}
+                        onScroll={this.handleScroll}
                     >
-                        <ScrollViewInnerComponent>
-                            {children}
-                        </ScrollViewInnerComponent>
-                    </ShouldComponentUpdate>
-                    {hasScrollY ? this.getScrollBar("y") : null}
-                    {hasScrollX ? this.getScrollBar("x") : null}
-                </div>
+                        <ShouldComponentUpdate
+                            shouldComponentUpdate={shouldComponentUpdate}
+                        >
+                            <ScrollViewInnerComponent>
+                                {children}
+                            </ScrollViewInnerComponent>
+                        </ShouldComponentUpdate>
+                        {hasScrollY ? this.renderScrollBar("y") : null}
+                        {hasScrollX ? this.renderScrollBar("x") : null}
+                    </div>
+                </ScrollViewContext.Provider>
             </ReactResizeObserver>
         );
     }
