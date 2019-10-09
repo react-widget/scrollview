@@ -24,7 +24,6 @@ export default class DEMO extends Component {
             <div>
                 <ScrollView
                     style={{
-                        border: "1px solid green",
                         width: 260,
                         height: 300
                     }}

@@ -52,7 +52,7 @@ export default class ScrollView extends React.Component {
         overflow: "auto",
         overflowX: "auto",
         overflowY: "auto",
-        scrollBarSize: 7,
+        scrollBarSize: 5,
         scrollBarOffsetTopOrLeft: 0,
         scrollBarOffsetRightOrBottom: 0,
         wheelDir: "y",
