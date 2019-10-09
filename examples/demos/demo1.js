@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import ScrollView from "../../src";
 export default class DEMO extends Component {
     state = {
-        list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     };
 
     componentDidMount() {

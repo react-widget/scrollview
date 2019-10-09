@@ -35,7 +35,7 @@ export default class ScrollView extends React.Component {
         scrollBarOffsetTopOrLeft: PropTypes.number,
         scrollBarOffsetRightOrBottom: PropTypes.number,
         wheelStep: PropTypes.number,
-        enablePreventDefaultOnEnd: PropTypes.bool,
+        preventDefaultOnEnd: PropTypes.bool,
         onScroll: PropTypes.func,
         onHScrollEnd: PropTypes.func,
         onVScrollEnd: PropTypes.func,
@@ -63,7 +63,7 @@ export default class ScrollView extends React.Component {
         thumbMaxSize: 999999,
         showTrack: true,
         wheelStep: 100,
-        enablePreventDefaultOnEnd: true,
+        preventDefaultOnEnd: true,
         onScroll: null,
         onHScrollEnd: null,
         onVScrollEnd: null,
@@ -146,11 +146,7 @@ export default class ScrollView extends React.Component {
         let lastDir = 1;
         return e => {
             const deltaY = e.deltaY;
-            const {
-                wheelStep,
-                wheelDir,
-                enablePreventDefaultOnEnd
-            } = this.props;
+            const { wheelStep, wheelDir, preventDefaultOnEnd } = this.props;
             const curDir = deltaY > 0 ? 1 : -1;
             const state = this.state;
 
@@ -172,7 +168,7 @@ export default class ScrollView extends React.Component {
                     : this.getScrollPos(wheelDir) - wheelStep
             );
 
-            if (enablePreventDefaultOnEnd /* && wheelDir !== 'x' */) {
+            if (preventDefaultOnEnd /* && wheelDir !== 'x' */) {
                 var isEnd =
                     deltaY > 0
                         ? this.isScrollEnd(wheelDir)
@@ -474,9 +470,14 @@ export default class ScrollView extends React.Component {
 
         return dir === "y"
             ? scrollview.scrollTop >=
-                  scrollview.scrollHeight - scrollview.clientHeight
+                  scrollview.scrollHeight -
+                      scrollview.clientHeight -
+                      //部分缩放下可能导致无法触发底部ScrollEnd
+                      (scrollview.scrollTop > 0 ? 2 : 0)
             : scrollview.scrollLeft >=
-                  scrollview.scrollWidth - scrollview.clientWidth;
+                  scrollview.scrollWidth -
+                      scrollview.clientWidth -
+                      (scrollview.scrollLeft > 0 ? 2 : 0);
     }
 
     getScrollPos(dir = "y") {
@@ -703,6 +704,7 @@ export default class ScrollView extends React.Component {
                     ref={this.saveRef.bind(this, "scrollview")}
                     className={classes}
                     style={style}
+                    // https://github.com/facebook/react/issues/14856#issuecomment-478144231
                     onWheel={this.handleWheel}
                     onScroll={this.handleScroll}
                 >
