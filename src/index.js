@@ -26,8 +26,8 @@ export default class ScrollView extends React.Component {
         overflowX: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         overflowY: PropTypes.oneOf(["hidden", "auto", "scroll", "visible"]),
         wheelDir: PropTypes.oneOf(["x", "y"]),
-        thumbCls: PropTypes.string,
-        trackCls: PropTypes.string,
+        thumbClassName: PropTypes.string,
+        trackClassName: PropTypes.string,
         scrollBarSize: PropTypes.number,
         thumbSize: PropTypes.number,
         thumbMinSize: PropTypes.number,
@@ -45,7 +45,7 @@ export default class ScrollView extends React.Component {
     };
 
     static defaultProps = {
-        scrollViewInnerComponent: Fragment,
+        scrollViewInnerComponent: "div",
         prefixCls: "rw-scrollview",
         className: "",
         overflow: "auto",
@@ -55,14 +55,14 @@ export default class ScrollView extends React.Component {
         scrollBarOffsetTopOrLeft: 0,
         scrollBarOffsetRightOrBottom: 0,
         wheelDir: "y",
-        thumbCls: "",
-        trackCls: "",
+        thumbClassName: "",
+        trackClassName: "",
         thumbSize: null,
         thumbMinSize: 6,
-        thumbMaxSize: 999999,
+        thumbMaxSize: Number.MAX_VALUE,
         showTrack: true,
         wheelStep: 100,
-        preventDefaultOnEnd: true,
+        preventDefaultOnEnd: false,
         onScroll: null,
         onHScrollEnd: null,
         onVScrollEnd: null,
@@ -75,15 +75,18 @@ export default class ScrollView extends React.Component {
 
         this._refs = {};
 
-        this.state = {
-            hasScrollX: false,
-            hasScrollY: false,
+        this.privateState = {
+            scrollTop: 0,
+            scrollLeft: 0,
             thumbXSize: null,
             thumbYSize: null,
             scrollXRatio: null,
-            scrollYRatio: null,
-            scrollTop: 0,
-            scrollLeft: 0
+            scrollYRatio: null
+        };
+
+        this.state = {
+            hasScrollX: false,
+            hasScrollY: false
         };
     }
 
@@ -149,7 +152,7 @@ export default class ScrollView extends React.Component {
                     : this.getScrollPos(wheelDir) - wheelStep
             );
 
-            if (preventDefaultOnEnd /* && wheelDir !== 'x' */) {
+            if (!preventDefaultOnEnd /* && wheelDir !== 'x' */) {
                 var isEnd =
                     deltaY > 0
                         ? this.isScrollEnd(wheelDir)
@@ -175,14 +178,14 @@ export default class ScrollView extends React.Component {
             onVScrollEnd,
             onVScrollStart
         } = this.props;
-        const state = this.state;
+        const privateState = this.privateState;
         const target = e.target;
 
-        const lastScrollTop = state.scrollTop,
-            lastScrollLeft = state.scrollLeft;
+        const lastScrollTop = privateState.scrollTop,
+            lastScrollLeft = privateState.scrollLeft;
 
-        state.scrollTop = target.scrollTop;
-        state.scrollLeft = target.scrollLeft;
+        privateState.scrollTop = target.scrollTop;
+        privateState.scrollLeft = target.scrollLeft;
 
         this.updateScrollBarLayout();
         this.updateScrollBarPosition();
@@ -191,20 +194,20 @@ export default class ScrollView extends React.Component {
             onScroll(e);
         }
 
-        if (lastScrollTop !== state.scrollTop) {
+        if (lastScrollTop !== privateState.scrollTop) {
             if (onVScrollEnd && this.isScrollEnd("y")) {
                 onVScrollEnd(e);
             }
-            if (onVScrollStart && state.scrollTop === 0) {
+            if (onVScrollStart && privateState.scrollTop === 0) {
                 onVScrollStart(e);
             }
         }
 
-        if (lastScrollLeft !== state.scrollLeft) {
+        if (lastScrollLeft !== privateState.scrollLeft) {
             if (onHScrollEnd && this.isScrollEnd("x")) {
                 onHScrollEnd(e);
             }
-            if (onHScrollStart && state.scrollLeft === 0) {
+            if (onHScrollStart && privateState.scrollLeft === 0) {
                 onHScrollStart(e);
             }
         }
@@ -215,7 +218,7 @@ export default class ScrollView extends React.Component {
             return;
         }
         const target = e.target;
-        const { scrollXRatio, scrollYRatio } = this.state;
+        const { scrollXRatio, scrollYRatio } = this.privateState;
         const { verticalBarThumbEl, horizontalBarThumbEl } = this._refs;
         const rect = target.getBoundingClientRect();
         const isVertical = dir === "y";
@@ -251,11 +254,12 @@ export default class ScrollView extends React.Component {
 
     handleThumbMouseDown(e, dir = "y") {
         const doc = document;
-        const state = this.state;
+        const privateState = this.privateState;
         const startY = e.pageY;
         const startX = e.pageX;
         const start = this.getScrollPos(dir);
-        const ratio = state[dir === "y" ? "scrollYRatio" : "scrollXRatio"];
+        const ratio =
+            privateState[dir === "y" ? "scrollYRatio" : "scrollXRatio"];
 
         let moveOff, upOff, cursor;
 
@@ -312,9 +316,13 @@ export default class ScrollView extends React.Component {
         this.scrollTo(dir, s - c);
     }
 
+    scrollStart(dir = "y") {
+        this.scrollTo(dir, 0);
+    }
+
     scrollIntoView(el) {
         const scrollview = this.getScrollViewBody();
-        if (!contains(scrollview, el) || !isVisible(el)) return;
+        if (!contains(scrollview, el) || !isVisible(el)) return false;
 
         const pOffset = getOffset(scrollview);
         const tOffset = getOffset(el);
@@ -348,6 +356,8 @@ export default class ScrollView extends React.Component {
                 pRight +
                 Math.min(el.offsetWidth, scrollview.clientWidth);
         }
+
+        return true;
     }
 
     setThumbPos() {
@@ -356,7 +366,8 @@ export default class ScrollView extends React.Component {
     }
 
     setThumbYPos() {
-        const { hasScrollY, scrollYRatio, scrollTop, thumbYSize } = this.state;
+        const { hasScrollY } = this.state;
+        const { scrollTop, thumbYSize, scrollYRatio } = this.privateState;
         if (!hasScrollY) return;
 
         const { verticalBarWrapEl } = this._refs;
@@ -368,7 +379,8 @@ export default class ScrollView extends React.Component {
     }
 
     setThumbXPos() {
-        const { hasScrollX, scrollXRatio, scrollLeft, thumbXSize } = this.state;
+        const { hasScrollX } = this.state;
+        const { scrollLeft, thumbXSize, scrollXRatio } = this.privateState;
         if (!hasScrollX) return;
 
         const { horizontalBarWrapEl } = this._refs;
@@ -481,6 +493,11 @@ export default class ScrollView extends React.Component {
         this.updateScrollBarLayoutAndPosition();
     }
 
+    handleResize = () => {
+        console.log("handleResize");
+        this.updateScrollBarLayoutAndPosition();
+    };
+
     updateScrollBarLayoutAndPosition = () => {
         const hasScrollX = this.hasScroll("x"),
             hasScrollY = this.hasScroll("y");
@@ -509,24 +526,24 @@ export default class ScrollView extends React.Component {
             verticalBarThumbEl,
             horizontalBarThumbEl
         } = this._refs;
+        const { hasScrollX, hasScrollY } = this.state;
+        const privateState = this.privateState;
         const scrollview = this.getScrollViewBody();
-        const state = this.state;
-        const { hasScrollX, hasScrollY } = state;
 
         if (hasScrollY) {
             let thumbSize = this.getThumbSize("y");
-            state.thumbYSize = thumbSize;
+            privateState.thumbYSize = thumbSize;
             verticalBarThumbEl.style.height = thumbSize + "px";
-            state.scrollYRatio =
+            privateState.scrollYRatio =
                 (scrollview.scrollHeight - scrollview.clientHeight) /
                 (verticalBarWrapEl.clientHeight - thumbSize);
         }
 
         if (hasScrollX) {
             let thumbSize = this.getThumbSize("x");
-            state.thumbXSize = thumbSize;
+            privateState.thumbXSize = thumbSize;
             horizontalBarThumbEl.style.width = thumbSize + "px";
-            state.scrollXRatio =
+            privateState.scrollXRatio =
                 (scrollview.scrollWidth - scrollview.clientWidth) /
                 (horizontalBarWrapEl.clientWidth - thumbSize);
         }
@@ -595,9 +612,9 @@ export default class ScrollView extends React.Component {
         const {
             prefixCls,
             showTrack,
-            thumbCls,
+            thumbClassName,
             scrollBarSize,
-            trackCls
+            trackClassName
         } = this.props;
         const isVertical = dir === "y";
         const dirCls = `${prefixCls}-bar-${
@@ -635,7 +652,7 @@ export default class ScrollView extends React.Component {
                             ref={this.saveRef.bind(this, scrollbarTrackRef)}
                             className={classNames({
                                 [`${prefixCls}-bar-track`]: true,
-                                [trackCls]: trackCls
+                                [trackClassName]: trackClassName
                             })}
                             onMouseDown={e => this.handleTrackMouseDown(e, dir)}
                         ></div>
@@ -644,7 +661,7 @@ export default class ScrollView extends React.Component {
                         ref={this.saveRef.bind(this, scrollbarThumbRef)}
                         className={classNames({
                             [`${prefixCls}-bar-thumb`]: true,
-                            [thumbCls]: thumbCls
+                            [thumbClassName]: thumbClassName
                         })}
                         onMouseDown={e => this.handleThumbMouseDown(e, dir)}
                     ></div>
@@ -676,31 +693,29 @@ export default class ScrollView extends React.Component {
         const otherProps = omit(others, Object.keys(ScrollView.defaultProps));
 
         return (
-            <ReactResizeObserver
-                onResize={this.updateScrollBarLayoutAndPosition}
-            >
-                <ScrollViewContext.Provider value={this}>
-                    <div
-                        {...otherProps}
-                        ref={this.saveRef.bind(this, "scrollview")}
-                        className={classes}
-                        style={style}
-                        // https://github.com/facebook/react/issues/14856#issuecomment-478144231
-                        onWheel={this.handleWheel}
-                        onScroll={this.handleScroll}
+            <ScrollViewContext.Provider value={this}>
+                <div
+                    {...otherProps}
+                    ref={this.saveRef.bind(this, "scrollview")}
+                    className={classes}
+                    style={style}
+                    // https://github.com/facebook/react/issues/14856#issuecomment-478144231
+                    onWheel={this.handleWheel}
+                    onScroll={this.handleScroll}
+                >
+                    <ShouldComponentUpdate
+                        shouldComponentUpdate={shouldComponentUpdate}
                     >
-                        <ShouldComponentUpdate
-                            shouldComponentUpdate={shouldComponentUpdate}
-                        >
+                        <ReactResizeObserver onResize={this.handleResize}>
                             <ScrollViewInnerComponent>
                                 {children}
                             </ScrollViewInnerComponent>
-                        </ShouldComponentUpdate>
-                        {hasScrollY ? this.renderScrollBar("y") : null}
-                        {hasScrollX ? this.renderScrollBar("x") : null}
-                    </div>
-                </ScrollViewContext.Provider>
-            </ReactResizeObserver>
+                        </ReactResizeObserver>
+                    </ShouldComponentUpdate>
+                    {hasScrollY ? this.renderScrollBar("y") : null}
+                    {hasScrollX ? this.renderScrollBar("x") : null}
+                </div>
+            </ScrollViewContext.Provider>
         );
     }
 }
