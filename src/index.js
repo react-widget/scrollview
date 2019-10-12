@@ -15,8 +15,9 @@ import {
 import ShouldComponentUpdate from "./ShouldComponentUpdate";
 import ScrollViewContext from "./ScrollViewContext";
 import useScrollView from "./useScrollView";
+import useVirtualScrollBar from "./useVirtualScrollBar";
 
-export { useScrollView };
+export { useScrollView, useVirtualScrollBar };
 
 export default class ScrollView extends React.Component {
     static propTypes = {
@@ -494,7 +495,6 @@ export default class ScrollView extends React.Component {
     }
 
     handleResize = () => {
-        console.log("handleResize");
         this.updateScrollBarLayoutAndPosition();
     };
 

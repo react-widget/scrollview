@@ -1,5 +1,26 @@
 import React, { Component } from "react";
-import ScrollView from "../../src";
+import ScrollView, { useVirtualScrollBar } from "../../src";
+
+function VSrollBar() {
+    const ref = React.useRef();
+    const [VirtualScrollBar, connect] = useVirtualScrollBar();
+
+    console.log(connect);
+
+    return (
+        <div>
+            <div ref={connect}></div>
+            <VirtualScrollBar
+                style={{
+                    position: "relative",
+                    height: 200,
+                    width: 10
+                }}
+            />
+        </div>
+    );
+}
+
 export default class DEMO extends Component {
     state = {
         list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -22,6 +43,7 @@ export default class DEMO extends Component {
 
         return (
             <div>
+                <VSrollBar />
                 <ScrollView
                     style={{
                         width: 260,
