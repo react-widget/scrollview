@@ -246,7 +246,7 @@ export default class VirtualScrollBar extends React.Component {
         privateState.scrollLeft = target.scrollLeft;
 
         // this.updateScrollBarLayout();
-        this.updateScrollBarPosition();
+        this.updateThumbPosition();
 
         if (onScroll) {
             onScroll(e);
@@ -319,7 +319,7 @@ export default class VirtualScrollBar extends React.Component {
         if (hasScroll) {
             this.updateScrollRatio();
             // this.updateScrollBarLayout();
-            this.updateScrollBarPosition();
+            this.updateThumbPosition();
         }
     }
 
@@ -350,11 +350,8 @@ export default class VirtualScrollBar extends React.Component {
     updateScrollRatio() {
         const { scrollBarInnerDOM, scrollBarThumbDOM } = this._refs;
         const { dir } = this.props;
-        const { hasScroll } = this.state;
         const privateState = this.privateState;
         const scrollview = this.getScrollViewBody();
-
-        if (!hasScroll) return;
 
         if (dir === "y") {
             let thumbSize = this.getThumbSize("y");
@@ -429,14 +426,8 @@ export default class VirtualScrollBar extends React.Component {
     //     }
     // }
 
-    updateScrollBarPosition() {
-        this.setThumbPos();
-    }
-
-    setThumbPos() {
+    updateThumbPosition() {
         const { dir } = this.props;
-        const { hasScroll } = this.state;
-        if (!hasScroll) return;
         const {
             scrollTop,
             scrollLeft,
