@@ -1,11 +1,9 @@
 import React from "react";
 import VirtualScrollBar from "./VirtualScrollBar";
 
-export default (props = {}) => {
+export default options => {
     const scrollRef = React.useRef();
     const _connect = React.useRef();
-
-    const handleWheel = () => {};
 
     const _VirtualScrollBar = React.useMemo(() => {
         return props => {
@@ -13,9 +11,14 @@ export default (props = {}) => {
 
             _connect.current = connect;
 
-            if (!dom) return null;
-
-            return <VirtualScrollBar dom={dom} ref={scrollRef} {...props} />;
+            return (
+                <VirtualScrollBar
+                    dom={dom}
+                    ref={scrollRef}
+                    {...options}
+                    {...props}
+                />
+            );
         };
     }, []);
 
@@ -23,7 +26,6 @@ export default (props = {}) => {
         _VirtualScrollBar,
         dom => {
             _connect.current && _connect.current(dom);
-        },
-        handleWheel
+        }
     ];
 };

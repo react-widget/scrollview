@@ -3,18 +3,41 @@ import ScrollView, { useVirtualScrollBar } from "../../src";
 
 function VSrollBar() {
     const ref = React.useRef();
-    const [VirtualScrollBar, connect] = useVirtualScrollBar();
-
-    console.log(connect);
+    const [VVirtualScrollBar, vconnect] = useVirtualScrollBar();
+    const [HVirtualScrollBar, hconnect] = useVirtualScrollBar({
+        dir: "x"
+    });
 
     return (
         <div>
-            <div ref={connect}></div>
-            <VirtualScrollBar
+            <div
+                style={{
+                    width: 100,
+                    overflow: "auto",
+                    height: 100
+                }}
+                ref={dom => {
+                    vconnect(dom);
+                    hconnect(dom);
+                }}
+            >
+                <div
+                    style={{
+                        width: 2620,
+                        height: 2620
+                    }}
+                ></div>
+            </div>
+            <VVirtualScrollBar
                 style={{
                     position: "relative",
-                    height: 200,
-                    width: 10
+                    height: 200
+                }}
+            />
+            <HVirtualScrollBar
+                style={{
+                    position: "relative",
+                    width: 200
                 }}
             />
         </div>
@@ -43,6 +66,8 @@ export default class DEMO extends Component {
 
         return (
             <div>
+                <VSrollBar />
+                <VSrollBar />
                 <VSrollBar />
                 <ScrollView
                     style={{

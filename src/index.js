@@ -288,7 +288,7 @@ export default class ScrollView extends React.Component {
         const scrollview = this.getScrollViewBody();
         const proto = dir === "y" ? "scrollTop" : "scrollLeft";
 
-        if (this.state[proto] === pos) {
+        if (this.privateState[proto] === pos) {
             return;
         }
 
