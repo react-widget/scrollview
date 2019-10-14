@@ -24,7 +24,7 @@ function VSrollBar() {
                 <div
                     style={{
                         width: 2620,
-                        height: 2620
+                        height: 820
                     }}
                 ></div>
             </div>

@@ -34,7 +34,11 @@ export default class VirtualScrollBar extends React.Component {
         thumbMaxSize: Number.MAX_VALUE,
         scrollBarSize: 5,
         scrollBarOffsetTopOrLeft: 0,
-        scrollBarOffsetRightOrBottom: 0
+        scrollBarOffsetRightOrBottom: 0,
+        handleWheel: null, //自定义wheel事件处理
+        onScroll: null,
+        onScrollEnd: null,
+        onScrollStart: null
     };
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -57,7 +61,12 @@ export default class VirtualScrollBar extends React.Component {
         prevDOM: null
     };
 
-    _refs = {};
+    _refs = {
+        scrollBarDOM: null,
+        scrollBarInnerDOM: null,
+        scrollBarTrackDOM: null,
+        scrollBarThumbDOM: null
+    };
 
     saveRef(name, node) {
         this._refs[name] = node;
@@ -106,14 +115,14 @@ export default class VirtualScrollBar extends React.Component {
                 alreadyScrollEnd =
                     deltaY > 0
                         ? this.isScrollEnd(wheelDir)
-                        : this.getScrollPos(wheelDir) <= 0;
+                        : this.getScrollOffset(wheelDir) <= 0;
             }
 
             this.scrollTo(
                 wheelDir,
                 deltaY > 0
-                    ? this.getScrollPos(wheelDir) + wheelStep
-                    : this.getScrollPos(wheelDir) - wheelStep
+                    ? this.getScrollOffset(wheelDir) + wheelStep
+                    : this.getScrollOffset(wheelDir) - wheelStep
             );
 
             if (preventDefaultOnEnd) {
@@ -122,7 +131,7 @@ export default class VirtualScrollBar extends React.Component {
                 var isEnd =
                     deltaY > 0
                         ? this.isScrollEnd(wheelDir)
-                        : this.getScrollPos(wheelDir) <= 0;
+                        : this.getScrollOffset(wheelDir) <= 0;
 
                 //在没有滚动到底部时加锁
                 if (!alreadyScrollEnd) {
@@ -141,7 +150,7 @@ export default class VirtualScrollBar extends React.Component {
                 if (!isEnd) {
                     e.preventDefault();
                 } else {
-                    //在锁定状态下阻止时间冒泡
+                    //在锁定状态下阻止事件冒泡
                     if (wheelLock) {
                         preventDefault(e);
                     }
@@ -154,8 +163,8 @@ export default class VirtualScrollBar extends React.Component {
         if (e.button !== 0) {
             return;
         }
-        const target = e.target;
-        const { scrollRatio: ratio } = this.privateState;
+        const target = e.currentTarget;
+        const { scrollRatio, thumbSize } = this.privateState;
         const { scrollBarThumbDOM } = this._refs;
         const rect = target.getBoundingClientRect();
         const isVertical = dir === "y";
@@ -170,21 +179,27 @@ export default class VirtualScrollBar extends React.Component {
         const clickPos = clickPagePos - trackPos;
 
         const thumbPos = parseInt(
-            getStyle(scrollBarThumbDOM, isVertical ? "top" : "left"),
-            10
+            getStyle(scrollBarThumbDOM, isVertical ? "top" : "left")
         );
-        const thumbSize =
-            scrollBarThumbDOM[isVertical ? "offsetHeight" : "offsetWidth"];
+
+        const thumbMiddle = thumbSize / 2;
 
         if (clickPos < thumbPos) {
-            this.scrollTo(dir, (clickPagePos - trackPos) * ratio);
+            this.scrollTo(
+                dir,
+                (clickPagePos - trackPos - thumbMiddle) * scrollRatio
+            );
         } else {
             this.scrollTo(
                 dir,
-                (thumbPos + clickPagePos - (thumbPos + thumbSize + trackPos)) *
-                    ratio
+                (thumbPos +
+                    clickPagePos -
+                    (thumbPos + trackPos + thumbMiddle)) *
+                    scrollRatio
             );
         }
+
+        this.handleThumbMouseDown(e, dir);
     }
 
     handleThumbMouseDown(e, dir = "y") {
@@ -193,7 +208,7 @@ export default class VirtualScrollBar extends React.Component {
         const ratio = privateState.scrollRatio;
         const startY = e.pageY;
         const startX = e.pageX;
-        const start = this.getScrollPos(dir);
+        const start = this.getScrollOffset(dir);
 
         let moveOff, upOff, cursor;
 
@@ -217,21 +232,21 @@ export default class VirtualScrollBar extends React.Component {
         });
     }
 
-    getScrollPos(dir = "y") {
-        const scrollview = this.getScrollViewBody();
+    getScrollOffset(dir = "y") {
+        const dom = this.getScrollViewBody();
 
-        return scrollview[dir === "y" ? "scrollTop" : "scrollLeft"];
+        return dom[dir === "y" ? "scrollTop" : "scrollLeft"];
     }
 
     scrollTo(dir = "y", pos) {
-        const scrollview = this.getScrollViewBody();
+        const dom = this.getScrollViewBody();
         const proto = dir === "y" ? "scrollTop" : "scrollLeft";
 
         if (this.privateState[proto] === pos) {
             return;
         }
 
-        scrollview[proto] = pos;
+        dom[proto] = pos;
     }
 
     handleScroll = e => {
@@ -245,7 +260,6 @@ export default class VirtualScrollBar extends React.Component {
         privateState.scrollTop = target.scrollTop;
         privateState.scrollLeft = target.scrollLeft;
 
-        // this.updateScrollBarLayout();
         this.updateThumbPosition();
 
         if (onScroll) {
@@ -272,18 +286,18 @@ export default class VirtualScrollBar extends React.Component {
     };
 
     isScrollEnd(dir = "y") {
-        const scrollview = this.getScrollViewBody();
+        const dom = this.getScrollViewBody();
 
         return dir === "y"
-            ? scrollview.scrollTop >=
-                  scrollview.scrollHeight -
-                      scrollview.clientHeight -
+            ? dom.scrollTop >=
+                  dom.scrollHeight -
+                      dom.clientHeight -
                       //部分系统缩放下可能导致无法触发底部ScrollEnd
-                      (scrollview.scrollTop > 0 ? 2 : 0)
-            : scrollview.scrollLeft >=
-                  scrollview.scrollWidth -
-                      scrollview.clientWidth -
-                      (scrollview.scrollLeft > 0 ? 2 : 0);
+                      (dom.scrollTop > 0 ? 2 : 0)
+            : dom.scrollLeft >=
+                  dom.scrollWidth -
+                      dom.clientWidth -
+                      (dom.scrollLeft > 0 ? 2 : 0);
     }
 
     initEvents() {
@@ -318,7 +332,6 @@ export default class VirtualScrollBar extends React.Component {
 
         if (hasScroll) {
             this.updateScrollRatio();
-            // this.updateScrollBarLayout();
             this.updateThumbPosition();
         }
     }
@@ -326,15 +339,11 @@ export default class VirtualScrollBar extends React.Component {
     getThumbSize(dir = "y") {
         const { thumbSize, thumbMinSize, thumbMaxSize } = this.props;
         const { scrollBarInnerDOM } = this._refs;
-        const scrollview = this.getScrollViewBody();
+        const dom = this.getScrollViewBody();
 
         const isVertical = dir === "y";
-        const client = isVertical
-                ? scrollview.clientHeight
-                : scrollview.clientWidth,
-            scroll = isVertical
-                ? scrollview.scrollHeight
-                : scrollview.scrollWidth,
+        const clientSize = isVertical ? dom.clientHeight : dom.clientWidth,
+            scrollSize = isVertical ? dom.scrollHeight : dom.scrollWidth,
             trackSize = isVertical
                 ? scrollBarInnerDOM.clientHeight
                 : scrollBarInnerDOM.clientWidth;
@@ -342,7 +351,7 @@ export default class VirtualScrollBar extends React.Component {
         return thumbSize && thumbSize > 0
             ? thumbSize
             : Math.min(
-                  Math.max(thumbMinSize, (client / scroll) * trackSize),
+                  Math.max(thumbMinSize, (clientSize / scrollSize) * trackSize),
                   thumbMaxSize
               );
     }
@@ -351,14 +360,14 @@ export default class VirtualScrollBar extends React.Component {
         const { scrollBarInnerDOM, scrollBarThumbDOM } = this._refs;
         const { dir } = this.props;
         const privateState = this.privateState;
-        const scrollview = this.getScrollViewBody();
+        const dom = this.getScrollViewBody();
 
         if (dir === "y") {
             let thumbSize = this.getThumbSize("y");
             privateState.thumbSize = thumbSize;
             scrollBarThumbDOM.style.height = thumbSize + "px";
             privateState.scrollRatio =
-                (scrollview.scrollHeight - scrollview.clientHeight) /
+                (dom.scrollHeight - dom.clientHeight) /
                 (scrollBarInnerDOM.clientHeight - thumbSize);
         }
 
@@ -367,64 +376,10 @@ export default class VirtualScrollBar extends React.Component {
             privateState.thumbSize = thumbSize;
             scrollBarThumbDOM.style.width = thumbSize + "px";
             privateState.scrollRatio =
-                (scrollview.scrollWidth - scrollview.clientWidth) /
+                (dom.scrollWidth - dom.clientWidth) /
                 (scrollBarInnerDOM.clientWidth - thumbSize);
         }
     }
-
-    // updateScrollBarLayout() {
-    //     const {
-    //         dir,
-    //         scrollBarSize,
-    //         scrollBarOffsetTopOrLeft,
-    //         scrollBarOffsetRightOrBottom
-    //     } = this.props;
-    //     const { hasScroll } = this.state;
-    //     const { scrollBarDOM } = this._refs;
-    //     const scrollview = this.getScrollViewBody();
-    //     const height = scrollview.clientHeight;
-    //     const width = scrollview.clientWidth;
-    //     const sTop = scrollview.scrollTop;
-    //     const sLeft = scrollview.scrollLeft;
-
-    //     if (hasScroll && dir === "y") {
-    //         scrollBarDOM.style.top = scrollBarOffsetTopOrLeft + sTop + "px";
-    //         scrollBarDOM.style.right =
-    //             scrollBarOffsetRightOrBottom + sLeft * -1 + "px";
-    //         scrollBarDOM.style.height =
-    //             height -
-    //             scrollBarOffsetTopOrLeft -
-    //             (hasScroll
-    //                 ? scrollBarSize +
-    //                   scrollBarOffsetTopOrLeft +
-    //                   scrollBarOffsetRightOrBottom
-    //                 : scrollBarOffsetTopOrLeft) +
-    //             "px";
-    //         if (scrollBarDOM) {
-    //             scrollBarDOM.style.bottom =
-    //                 scrollBarOffsetRightOrBottom + sTop * -1 + "px";
-    //         }
-    //     }
-
-    //     if (hasScroll && dir === "x") {
-    //         scrollBarDOM.style.left = scrollBarOffsetTopOrLeft + sLeft + "px";
-    //         scrollBarDOM.style.bottom =
-    //             scrollBarOffsetRightOrBottom + sTop * -1 + "px";
-    //         scrollBarDOM.style.width =
-    //             width -
-    //             scrollBarOffsetTopOrLeft -
-    //             (hasScroll
-    //                 ? scrollBarSize +
-    //                   scrollBarOffsetTopOrLeft +
-    //                   scrollBarOffsetRightOrBottom
-    //                 : scrollBarOffsetTopOrLeft) +
-    //             "px";
-    //         if (scrollBarDOM) {
-    //             scrollBarDOM.style.right =
-    //                 scrollBarOffsetRightOrBottom + sLeft * -1 + "px";
-    //         }
-    //     }
-    // }
 
     updateThumbPosition() {
         const { dir } = this.props;
@@ -542,7 +497,8 @@ export default class VirtualScrollBar extends React.Component {
             prefixCls,
             className,
             trackClassName,
-            thumbClassName
+            thumbClassName,
+            handleWheel
         } = this.props;
         const { hasScroll } = this.state;
 
@@ -557,7 +513,7 @@ export default class VirtualScrollBar extends React.Component {
                 }}
                 className={classNames(`${prefixCls}-bar`, className)}
                 // https://github.com/facebook/react/issues/14856#issuecomment-478144231
-                onWheel={this.handleWheel}
+                onWheel={handleWheel || this.handleWheel}
             >
                 <div
                     ref={this.saveRef.bind(this, "scrollBarInnerDOM")}
