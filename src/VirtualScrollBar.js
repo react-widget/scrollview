@@ -16,10 +16,11 @@ export default class VirtualScrollBar extends React.Component {
 
     static defaultProps = {
         dom: null,
-        overflow: "auto",
+        // overflow: "auto",
         direction: "vertical",
         prefixCls: "rw-scrollview",
-        barStyle: {},
+        style: {},
+        // barStyle: {},
         wheelDir: "y",
         wheelStep: 100,
         preventDefaultOnEndDelay: 500, // preventDefaultOnEnd = false有效
@@ -32,9 +33,9 @@ export default class VirtualScrollBar extends React.Component {
         thumbSize: null,
         thumbMinSize: 10,
         thumbMaxSize: Number.MAX_VALUE,
-        scrollBarSize: 5,
-        scrollBarOffsetTopOrLeft: 0,
-        scrollBarOffsetRightOrBottom: 0,
+        // scrollBarSize: 5,
+        // scrollBarOffsetTopOrLeft: 0,
+        // scrollBarOffsetRightOrBottom: 0,
         handleWheel: null, //自定义wheel事件处理
         onScroll: null,
         onScrollEnd: null,
