@@ -20,16 +20,18 @@ export default class VirtualScrollBar extends React.Component {
         direction: "vertical",
         prefixCls: "rw-scrollview",
         style: {},
+        className: "",
+        trackClassName: "",
+        trackStyle: {},
+        thumbClassName: "",
+        thumbStyle: {},
         // barStyle: {},
         wheelDir: "y",
         wheelStep: 100,
         preventDefaultOnEndDelay: 500, // preventDefaultOnEnd = false有效
         preventDefaultOnEnd: false,
         dir: "y",
-        className: "",
-        barSize: 5,
-        trackClassName: "",
-        thumbClassName: "",
+        size: 5,
         thumbSize: null,
         thumbMinSize: 10,
         thumbMaxSize: Number.MAX_VALUE,
@@ -418,24 +420,19 @@ export default class VirtualScrollBar extends React.Component {
     }
 
     getScrollBarStyle() {
-        const { dir, barSize } = this.props;
+        const { dir, size, style } = this.props;
+        const proto = dir === "y" ? "width" : "height";
 
         return {
-            ...(dir === "y"
-                ? {
-                      width: barSize
-                  }
-                : {
-                      height: barSize
-                  })
+            ...style,
+            [proto]: size
         };
     }
 
     getScrollBarInnerStyle() {
         const { dir } = this.props;
-        return {
-            position: "absolute",
-            ...(dir === "y"
+        const innerStyle =
+            dir === "y"
                 ? {
                       top: 0,
                       bottom: 0,
@@ -445,41 +442,37 @@ export default class VirtualScrollBar extends React.Component {
                       left: 0,
                       right: 0,
                       height: "100%"
-                  })
+                  };
+        return {
+            position: "absolute",
+            ...innerStyle
         };
     }
 
     getScrollBarTrackStyle() {
-        const { dir } = this.props;
+        const { dir, trackStyle } = this.props;
+
+        trackStyle[dir === "y" ? "top" : "left"] = 0;
+
         return {
             position: "absolute",
             zIndex: 1,
             height: "100%",
             width: "100%",
-            ...(dir === "y"
-                ? {
-                      top: 0
-                  }
-                : {
-                      left: 0
-                  })
+            ...trackStyle
         };
     }
 
     getScrollBarThumbStyle() {
-        const { dir, thumbMinSize } = this.props;
+        const { dir, thumbMinSize, thumbStyle } = this.props;
+
+        thumbStyle.height = dir === "y" ? thumbMinSize : "100%";
+        thumbStyle.width = dir !== "y" ? thumbMinSize : "100%";
+
         return {
             position: "absolute",
             zIndex: 2,
-            ...(dir === "y"
-                ? {
-                      height: thumbMinSize,
-                      width: "100%"
-                  }
-                : {
-                      width: thumbMinSize,
-                      height: "100%"
-                  })
+            ...thumbStyle
         };
     }
 
@@ -494,7 +487,6 @@ export default class VirtualScrollBar extends React.Component {
     render() {
         const {
             dir,
-            style,
             prefixCls,
             className,
             trackClassName,
@@ -508,10 +500,7 @@ export default class VirtualScrollBar extends React.Component {
         return (
             <div
                 ref={this.saveRef.bind(this, "scrollBarDOM")}
-                style={{
-                    ...this.getScrollBarStyle(),
-                    ...style
-                }}
+                style={this.getScrollBarStyle()}
                 className={classNames(`${prefixCls}-bar`, className)}
                 // https://github.com/facebook/react/issues/14856#issuecomment-478144231
                 onWheel={handleWheel || this.handleWheel}
