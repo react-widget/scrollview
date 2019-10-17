@@ -11,12 +11,13 @@ function hasScroll(dom, dir = "y") {
 
 export default class VirtualScrollBar extends React.Component {
     static propTypes = {
+        overflow: PropTypes.oneOf(["auto", "hidden", "scroll"]),
         direction: PropTypes.oneOf(["vertical", "horizontal"])
     };
 
     static defaultProps = {
         dom: null,
-        // overflow: "auto",
+        overflow: "auto", //后续支持
         direction: "vertical",
         prefixCls: "rw-scrollview",
         style: {},
@@ -25,7 +26,6 @@ export default class VirtualScrollBar extends React.Component {
         trackStyle: {},
         thumbClassName: "",
         thumbStyle: {},
-        // barStyle: {},
         wheelDir: "y",
         wheelStep: 100,
         preventDefaultOnEndDelay: 500, // preventDefaultOnEnd = false有效
@@ -35,9 +35,6 @@ export default class VirtualScrollBar extends React.Component {
         thumbSize: null,
         thumbMinSize: 10,
         thumbMaxSize: Number.MAX_VALUE,
-        // scrollBarSize: 5,
-        // scrollBarOffsetTopOrLeft: 0,
-        // scrollBarOffsetRightOrBottom: 0,
         handleWheel: null, //自定义wheel事件处理
         onScroll: null,
         onScrollEnd: null,
@@ -334,7 +331,7 @@ export default class VirtualScrollBar extends React.Component {
         this.initEvents();
 
         if (hasScroll) {
-            this.updateScrollRatio();
+            this.updateThumbAndRatio();
             this.updateThumbPosition();
         }
     }
@@ -359,7 +356,7 @@ export default class VirtualScrollBar extends React.Component {
               );
     }
 
-    updateScrollRatio() {
+    updateThumbAndRatio() {
         const { scrollBarInnerDOM, scrollBarThumbDOM } = this._refs;
         const { dir } = this.props;
         const privateState = this.privateState;
@@ -486,7 +483,9 @@ export default class VirtualScrollBar extends React.Component {
 
     render() {
         const {
+            dom,
             dir,
+            overflow,
             prefixCls,
             className,
             trackClassName,
