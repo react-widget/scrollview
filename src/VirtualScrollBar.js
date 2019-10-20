@@ -56,8 +56,8 @@ export default class VirtualScrollBar extends React.Component {
     privateState = {
         scrollTop: 0,
         scrollLeft: 0,
-        thumbSize: null,
-        scrollRatio: null,
+        thumbSize: 0,
+        scrollRatio: 1,
         prevDOM: null
     };
 
@@ -483,9 +483,9 @@ export default class VirtualScrollBar extends React.Component {
 
     render() {
         const {
-            dom,
+            // dom,
             dir,
-            overflow,
+            // overflow,
             prefixCls,
             className,
             trackClassName,
